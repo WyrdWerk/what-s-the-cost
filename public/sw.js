@@ -1,6 +1,6 @@
 // Offline support: precache the app shell + data; cache-first for same-origin static files.
 // /api/* is never cached — the client already treats a failed classifier call as "manual mode".
-const VERSION = "ckh-v2";
+const VERSION = "ckh-v3";
 const SHELL = ["/", "/index.html", "/style.css", "/app.js", "/engine.js",
   "/data/archetypes.json", "/data/config.json", "/data/scenarios.json"];
 

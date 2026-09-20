@@ -60,7 +60,7 @@ A weak match is never dressed up as a confident verdict.
 | Line | What it is |
 |---|---|
 | Agent setup (one time) | Range in ₹ |
-| Which model runs the agent? | Three-way switch **Cheap / Balanced / Frontier**; each is one pinned TokenWatch model. Switching recomputes the receipt live and is saved in the share link |
+| Which model runs the agent? | Switch **Cheap / Balanced / Frontier / Other…**. The three tiers are pinned TokenWatch models; **Other…** opens a search box that does one `GET /api/v1/models?search=<text>&limit=10` against TokenWatch (live price, dated), never the full catalog. Switching recomputes the receipt live; tier and any picked model are frozen into the share link |
 | Monthly run cost | Model usage on the selected tier's model |
 | Your oversight time | Hours/month **and** ₹/month, shown separately |
 | What this job costs you today | Baseline: hours/month × imputed wage |
@@ -393,19 +393,20 @@ curl -s -X POST https://agentcost.wyrdwerk.com/api/estimate -H 'content-type: ap
 
 - **Numbers are drafts.** `archetypes.json` and the owner/setup rates in `config.json` are
   implementer estimates pending founder review.
-- **Model choice is three fixed tiers**, not a benchmark-driven suggestion per archetype. TokenWatch
-  supports `GET /api/v1/models?benchmarked=true&min_intelligence=N&sort=input&limit=10`, so a
-  "suggested cheapest model that clears this archetype's benchmark floor" is a natural next step
-  (skip `:batch` rows and quantized third-party offers).
-- **Live TokenWatch refresh is not implemented.** The receipt shows a dated pricing snapshot. If
-  added, use the fixed per-model lookup `GET https://tokenwatch.wyrdwerk.com/api/v1/models/<id>/providers`
-  for the three tier ids only, never the full catalog, and keep the snapshot as fallback labelled
-  "saved pricing snapshot".
+- **Model choice is three fixed tiers plus a manual search**, not a benchmark-driven suggestion per
+  archetype. TokenWatch supports `GET /api/v1/models?benchmarked=true&min_intelligence=N&sort=input&limit=10`,
+  so a "suggested cheapest model that clears this archetype's benchmark floor" is a natural next
+  step (skip `:batch` rows and quantized third-party offers).
+- **The three tier prices are a dated snapshot; only "Other…" is live.** The tier snapshot is the
+  offline fallback. If the tiers are ever refreshed live, use the fixed per-model lookup
+  `GET https://tokenwatch.wyrdwerk.com/api/v1/models/<id>/providers` for the three ids only.
+- **No bring-your-own API key, deliberately.** A key is needed to *run* a model, not to *price* it;
+  TokenWatch prices are public. A key in the browser would contradict the privacy footer.
 - **Model-inferred counts snap to the tap grid**; a user who says "30 a day" sees 20 preselected
   and can change it.
 - **`language` from the classifier is informational**; the UI language follows the toggle.
 - No PDF export, WhatsApp integration, or voice — deliberately out of scope.
-- The service worker version string (`ckh-v2` in `sw.js`) must be bumped when cached files change
+- The service worker version string (`ckh-v3` in `sw.js`) must be bumped when cached files change
   in ways that matter offline.
 
 ## 15. Decision log
@@ -414,6 +415,7 @@ curl -s -X POST https://agentcost.wyrdwerk.com/api/estimate -H 'content-type: ap
 |---|---|---|
 | 2026-09-20 | Cloudflare Pages + one Function, vanilla JS, no build | Hackathon speed; zero-dependency deploy |
 | 2026-09-20 | Run model pinned to `claude-fable-5.1` from TokenWatch | Founder instruction; "modify later" |
+| 2026-09-20 | "Other…" model search via TokenWatch (`?search=&limit=10`), no BYO API key | Founder asked for wider choice; pricing needs no key |
 | 2026-09-20 | Superseded: three model tiers (Gemini 3.8 Flash / Sonnet 5 / Fable 5.1) chosen on the receipt, default `balanced` | Founder chose "fixed tiers" over benchmark-suggested model; ~130× price spread made a single pinned model misleading |
 | 2026-09-20 | FX pinned ₹96/$ | frankfurter 95.88 (09-18), er-api 95.94 (09-20), rounded |
 | 2026-09-20 | `current_handling = "nobody"` ⇒ baseline ₹0 | No time is currently spent; agent cannot "save" it |

@@ -29,7 +29,9 @@
       cta: "Talk to WyrdWerk → contact@wyrdwerk.com",
       perMonth: "/mo", examples: "Try an example:",
       tierLabel: "Which model runs the agent?", tierSub: "{model} · intelligence {iq} · ${pin}/{pout} per M tokens",
-      tiers: { cheap: "Cheap", balanced: "Balanced", frontier: "Frontier" },
+      tiers: { cheap: "Cheap", balanced: "Balanced", frontier: "Frontier", custom: "Other…" },
+      searchPlaceholder: "Search TokenWatch: e.g. deepseek, gemini, llama", searchHint: "Prices from TokenWatch, USD per million tokens. Pick a row.",
+      searchNone: "No match. Try another name.", searchFail: "TokenWatch unreachable — use the three tiers.", customLive: "live TokenWatch price, {date}",
       aiThinking: "Reading your description…", aiFallback: "Couldn't read that automatically — tap the closest match below.",
     },
     hi: {
@@ -56,11 +58,14 @@
       cta: "WyrdWerk से बात करें → contact@wyrdwerk.com",
       perMonth: "/महीना", examples: "उदाहरण देखें:",
       tierLabel: "एजेंट कौन-सा मॉडल चलाएगा?", tierSub: "{model} · इंटेलिजेंस {iq} · ${pin}/{pout} प्रति M टोकन",
-      tiers: { cheap: "सस्ता", balanced: "संतुलित", frontier: "सबसे तेज़" },
+      tiers: { cheap: "सस्ता", balanced: "संतुलित", frontier: "सबसे तेज़", custom: "और…" },
+      searchPlaceholder: "TokenWatch में खोजें: जैसे deepseek, gemini, llama", searchHint: "कीमतें TokenWatch से, USD प्रति मिलियन टोकन। एक चुनिए।",
+      searchNone: "कुछ नहीं मिला। दूसरा नाम आज़माएँ।", searchFail: "TokenWatch नहीं मिला — तीन टियर इस्तेमाल करें।", customLive: "TokenWatch लाइव कीमत, {date}",
       aiThinking: "आपका विवरण पढ़ रहे हैं…", aiFallback: "अपने आप समझ नहीं आया — नीचे सबसे नज़दीकी काम चुनिए।",
     },
   };
-  const TIERS = ["cheap", "balanced", "frontier"];
+  const TIERS = ["cheap", "balanced", "frontier", "custom"];
+  const TOKENWATCH_SEARCH = "https://tokenwatch.wyrdwerk.com/api/v1/models?limit=10&search=";
   const TAPS = {
     tasks_per_day: [1, 5, 10, 20, 50, 100],
     minutes_per_task: [2, 5, 10, 20, 30],
@@ -78,7 +83,9 @@
     archetype_id: null,
     source: "manual", // "manual" | "ai" | "shared"
     answers: { tasks_per_day: null, current_handling: null, minutes_per_task: null },
-    model_tier: null, // "cheap" | "balanced" | "frontier"; null → config.default_tier
+    model_tier: null, // "cheap" | "balanced" | "frontier" | "custom"; null → config.default_tier
+    custom_model: null, // priced model object picked from TokenWatch search (tier "custom")
+    searchOpen: false,
     frozen: null, // { archetype, config } snapshot embedded in share links
   };
   let DATA = { archetypes: [], config: null };
@@ -193,24 +200,80 @@
     const wrap = document.createElement("div"); wrap.className = "tier";
     const lab = document.createElement("div"); lab.className = "k"; lab.textContent = s.tierLabel;
     const seg = document.createElement("div"); seg.className = "seg";
-    TIERS.filter((k) => cfg.run_models && cfg.run_models[k]).forEach((k) => {
+    TIERS.filter((k) => k === "custom" || (cfg.run_models && cfg.run_models[k])).forEach((k) => {
       const b = document.createElement("button"); b.type = "button"; b.textContent = s.tiers[k];
-      b.setAttribute("aria-pressed", String(k === tier));
-      b.onclick = () => { state.model_tier = k; renderReceipt(); location.hash = encodeState(); };
+      b.setAttribute("aria-pressed", String(state.searchOpen ? k === "custom" : k === tier));
+      b.onclick = () => {
+        if (k === "custom") { state.searchOpen = true; renderReceipt(); $("#twSearch")?.focus(); return; }
+        state.model_tier = k; state.searchOpen = false; renderReceipt(); location.hash = encodeState();
+      };
       seg.appendChild(b);
     });
+    wrap.append(lab, seg);
+    if (state.searchOpen) wrap.appendChild(searchPanel(s));
     const m = Engine.resolveModel(cfg, tier);
     const sub = document.createElement("small");
-    sub.textContent = fmt(s.tierSub, { model: m.display_name || m.id, iq: m.intelligence_index ?? "—", pin: m.input_usd_per_million, pout: m.output_usd_per_million });
-    wrap.append(lab, seg, sub); return wrap;
+    sub.textContent = fmt(s.tierSub, { model: m.display_name || m.id, iq: m.intelligence_index ?? "—", pin: m.input_usd_per_million, pout: m.output_usd_per_million })
+      + (tier === "custom" ? " · " + fmt(s.customLive, { date: m.pricing_snapshot_date }) : "");
+    wrap.appendChild(sub); return wrap;
+  }
+
+  // "Other…" — one small TokenWatch search (limit 10, never the catalog). Picked row is frozen into state + share link.
+  function searchPanel(s) {
+    const box = document.createElement("div"); box.className = "twsearch";
+    const inp = document.createElement("input"); inp.type = "search"; inp.id = "twSearch"; inp.placeholder = s.searchPlaceholder; inp.autocomplete = "off";
+    const hint = document.createElement("small"); hint.textContent = s.searchHint;
+    const list = document.createElement("div"); list.className = "twlist";
+    let timer = null, seq = 0;
+    inp.oninput = () => {
+      clearTimeout(timer);
+      const q = inp.value.trim();
+      if (q.length < 2) { list.replaceChildren(); return; }
+      timer = setTimeout(async () => {
+        const my = ++seq;
+        try {
+          const r = await fetch(TOKENWATCH_SEARCH + encodeURIComponent(q), { signal: AbortSignal.timeout(6000) });
+          if (!r.ok) throw new Error(String(r.status));
+          const j = await r.json();
+          if (my !== seq) return;
+          renderRows(Array.isArray(j.models) ? j.models : []);
+        } catch { if (my === seq) { list.replaceChildren(); const e = document.createElement("small"); e.textContent = s.searchFail; list.appendChild(e); } }
+      }, 300);
+    };
+    function renderRows(rows) {
+      list.replaceChildren();
+      const usable = rows.filter((m) => m && typeof m.id === "string" && !/:batch$/.test(m.id) && m.pricing
+        && Number.isFinite(m.pricing.input) && Number.isFinite(m.pricing.output));
+      if (!usable.length) { const e = document.createElement("small"); e.textContent = s.searchNone; list.appendChild(e); return; }
+      usable.forEach((m) => {
+        const b = document.createElement("button"); b.type = "button"; b.className = "twrow";
+        const name = document.createElement("span"); name.textContent = String(m.name || m.id).slice(0, 60) + " · " + String(m.provider_display || m.provider || "").slice(0, 24);
+        const price = document.createElement("span"); price.className = "price";
+        price.textContent = "$" + m.pricing.input + "/" + m.pricing.output + (m.benchmarks?.intelligence_index != null ? " · iq " + m.benchmarks.intelligence_index : "");
+        b.append(name, price);
+        b.onclick = () => {
+          state.custom_model = {
+            id: String(m.id).slice(0, 80), display_name: String(m.name || m.id).slice(0, 60), provider: String(m.provider || "").slice(0, 40),
+            input_usd_per_million: m.pricing.input, output_usd_per_million: m.pricing.output,
+            intelligence_index: Number.isFinite(m.benchmarks?.intelligence_index) ? m.benchmarks.intelligence_index : null,
+            pricing_snapshot_date: new Date().toISOString().slice(0, 10), pricing_source: "TokenWatch search (live)",
+          };
+          state.model_tier = "custom"; state.searchOpen = false; renderReceipt(); location.hash = encodeState();
+        };
+        list.appendChild(b);
+      });
+    }
+    box.append(inp, hint, list); return box;
   }
 
   function renderReceipt() {
     const a = state.frozen ? state.frozen.archetype : archetypeById(state.archetype_id);
     const cfg = state.frozen ? state.frozen.config : DATA.config;
-    const tier = TIERS.includes(state.model_tier) ? state.model_tier : cfg.default_tier;
-    const model = Engine.resolveModel(cfg, tier);
-    const res = Engine.estimate(a, cfg, { ...state.answers, model_tier: tier });
+    let tier = TIERS.includes(state.model_tier) ? state.model_tier : cfg.default_tier;
+    if (tier === "custom" && !isPricedModel(state.custom_model)) tier = cfg.default_tier;
+    const cfgUsed = tier === "custom" ? { ...cfg, run_models: { ...cfg.run_models, custom: state.custom_model } } : cfg;
+    const model = Engine.resolveModel(cfgUsed, tier);
+    const res = Engine.estimate(a, cfgUsed, { ...state.answers, model_tier: tier });
     const s = t();
     const box = $("#receipt");
     box.replaceChildren();
@@ -221,7 +284,7 @@
     box.append(h, sub);
 
     box.appendChild(line(s.setup, rangeInr(res.setup)));
-    box.appendChild(tierSwitch(cfg, tier, s));
+    box.appendChild(tierSwitch(cfgUsed, tier, s));
     box.appendChild(line(s.run, rangeInr(res.run) + s.perMonth, fmt(s.runSub, { model: model.display_name || model.id })));
     box.appendChild(line(s.oversight, rangeInr(res.oversight) + s.perMonth, fmt(s.oversightSub, { hours: r1(res.oversightHours) })));
     box.appendChild(line(s.baseline, rangeInr(res.baseline) + s.perMonth,
@@ -271,7 +334,7 @@
     const payload = {
       v: 1, language: state.language, description: state.description.slice(0, 500),
       archetype_id: state.archetype_id, source: state.source, answers: state.answers,
-      model_tier: state.model_tier,
+      model_tier: state.model_tier, custom_model: state.model_tier === "custom" ? state.custom_model : null,
       frozen: state.frozen || { archetype: a, config: DATA.config },
     };
     const bytes = new TextEncoder().encode(JSON.stringify(payload));
@@ -297,6 +360,14 @@
         || !isFiniteRange(fc.owner_hourly_value_inr) || !isFiniteRange(fc.setup_hourly_rate_inr)
         || !isPricedModelSet(fc)) return null;
       if (p.model_tier != null && !TIERS.includes(p.model_tier)) return null;
+      if (p.model_tier === "custom") {
+        const cm = p.custom_model;
+        if (!isPricedModel(cm) || typeof cm.id !== "string") return null;
+        p.custom_model = { id: cm.id.slice(0, 80), display_name: String(cm.display_name || cm.id).slice(0, 60), provider: String(cm.provider || "").slice(0, 40),
+          input_usd_per_million: cm.input_usd_per_million, output_usd_per_million: cm.output_usd_per_million,
+          intelligence_index: Number.isFinite(cm.intelligence_index) ? cm.intelligence_index : null,
+          pricing_snapshot_date: String(cm.pricing_snapshot_date || "").slice(0, 10), pricing_source: "TokenWatch search (shared)" };
+      } else p.custom_model = null;
       fa.name_en = String(fa.name_en || ""); fa.name_hi = String(fa.name_hi || "");
       fa.price_drivers = Array.isArray(fa.price_drivers) ? fa.price_drivers.slice(0, 3).map(String) : [];
       fa.when_not_worth_it = String(fa.when_not_worth_it || ""); fa.when_not_worth_it_hi = String(fa.when_not_worth_it_hi || "");
@@ -307,7 +378,7 @@
   const isPricedModel = (m) => m && Number.isFinite(m.input_usd_per_million) && Number.isFinite(m.output_usd_per_million);
   // Accepts current {run_models, default_tier} or the legacy single run_model shape (v1 links from before tiers).
   const isPricedModelSet = (fc) => fc.run_models
-    ? Object.values(fc.run_models).length > 0 && Object.values(fc.run_models).every(isPricedModel) && TIERS.includes(fc.default_tier)
+    ? Object.values(fc.run_models).length > 0 && Object.values(fc.run_models).every(isPricedModel) && ["cheap", "balanced", "frontier"].includes(fc.default_tier)
     : isPricedModel(fc.run_model);
   const isFiniteRange = (r) => Array.isArray(r) && r.length === 2 && r.every(Number.isFinite);
 
@@ -360,7 +431,7 @@
     $("#toReceipt").onclick = () => { state.frozen = null; renderReceipt(); show("#screen-receipt"); location.hash = encodeState(); };
     $("#startOver").onclick = () => {
       history.replaceState(null, "", location.pathname);
-      state.archetype_id = null; state.frozen = null; state.source = "manual"; state.model_tier = null;
+      state.archetype_id = null; state.frozen = null; state.source = "manual"; state.model_tier = null; state.custom_model = null; state.searchOpen = false;
       state.answers = { tasks_per_day: null, current_handling: null, minutes_per_task: null };
       $("#description").value = ""; applyI18n(); show("#screen-describe");
     };
@@ -373,7 +444,7 @@
     if (shared) {
       Object.assign(state, { language: shared.language, description: shared.description, archetype_id: shared.frozen.archetype.id,
         source: ["ai", "canned", "manual"].includes(shared.source) ? shared.source : "shared", answers: shared.answers, frozen: shared.frozen,
-        model_tier: shared.model_tier || null });
+        model_tier: shared.model_tier || null, custom_model: shared.custom_model || null });
       applyI18n(); renderReceipt(); show("#screen-receipt");
     } else {
       applyI18n(); show("#screen-describe");
