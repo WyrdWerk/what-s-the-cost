@@ -111,7 +111,9 @@
     // a [lo, hi] range, or a number for review_min_per_day. Merged into the archetype/config the engine and
     // share link already use, so shared receipts carry edits with no separate code path.
     overrides: { setup_hours: null, setup_hourly_rate_inr: null, owner_hourly_value_inr: null, staff_wage_inr: null, review_min_per_day: null },
+    overridesFor: null, // archetype_id the job-specific overrides were typed for; they reset when the job changes
   };
+  const ADV_JOB_KEYS = ["setup_hours", "staff_wage_inr", "review_min_per_day"]; // depend on the job; the other two describe the user
   const ADV_RANGE_KEYS = ["setup_hours", "setup_hourly_rate_inr", "owner_hourly_value_inr", "staff_wage_inr"];
   const ADV_MAX = 1e7; // per-field ceiling; the engine's own contract also rejects absurd values
   let DATA = { archetypes: [], config: null };
@@ -255,6 +257,7 @@
   function renderAdvanced() {
     const box = $("#advFields");
     if (!box || !state.archetype_id || !DATA.config) return;
+    if (state.overridesFor !== state.archetype_id) { ADV_JOB_KEYS.forEach((k) => { state.overrides[k] = null; }); state.overridesFor = state.archetype_id; }
     const d = advDefaults(archetypeById(state.archetype_id), DATA.config), s = t().adv;
     box.replaceChildren();
     const readNum = (inp) => { const v = inp.value.trim() === "" ? NaN : Number(inp.value); return Number.isFinite(v) && v >= 0 && v <= ADV_MAX ? v : null; };
@@ -697,7 +700,7 @@
       history.replaceState(null, "", location.pathname);
       state.archetype_id = null; state.frozen = null; state.source = "manual"; state.model_tier = null; state.custom_model = null; state.searchOpen = false;
       state.answers = { tasks_per_day: null, current_handling: null, minutes_per_task: null };
-      Object.keys(state.overrides).forEach((k) => { state.overrides[k] = null; });
+      Object.keys(state.overrides).forEach((k) => { state.overrides[k] = null; }); state.overridesFor = null;
       const adv = $("#advanced"); if (adv) adv.open = false;
       $("#description").value = ""; show("#screen-describe"); applyI18n();
     };
