@@ -1,5 +1,5 @@
 {
   "name": "cost-kitna-hoga",
   "private": true,
-  "scripts": { "test": "node test/engine.test.js", "dev": "wrangler pages dev", "deploy": "wrangler pages deploy public --project-name cost-kitna-hoga --branch main" }
+  "scripts": { "test": "node test/engine.test.js", "dev": "wrangler pages dev", "deploy": "wrangler pages deploy public --project-name what-s-the-cost --branch main" }
 }
