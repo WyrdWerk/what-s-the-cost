@@ -27,6 +27,7 @@
       foot1: "Estimate, not a quote. Real price depends on the factors above.",
       foot2: "We do not save your workflow in an application database. AI mode sends it to Anthropic; their retention policies apply.",
       cta: "Talk to WyrdWerk → contact@wyrdwerk.com",
+      savePdf: "Save as PDF", saveImage: "Save as image", saving: "Preparing…", printLink: "Open this estimate again:", tapToReopen: "tap this link to reopen with the same numbers", madeWith: "agentcost.wyrdwerk.com · {date}",
       perMonth: "/mo", examples: "Try an example:",
       tierLabel: "Which model runs the agent?", tierSub: "{model} · intelligence {iq} · ${pin}/{pout} per M tokens",
       tiers: { cheap: "Cheap", balanced: "Balanced", frontier: "Frontier", custom: "Other…" },
@@ -58,6 +59,7 @@
       foot1: "यह अनुमान है, कोटेशन नहीं। असली कीमत ऊपर के कारकों पर निर्भर है।",
       foot2: "हम आपका वर्कफ़्लो किसी एप्लिकेशन डेटाबेस में नहीं रखते। AI मोड इसे Anthropic को भेजता है; उनकी रिटेंशन नीतियाँ लागू होती हैं।",
       cta: "WyrdWerk से बात करें → contact@wyrdwerk.com",
+      savePdf: "PDF सेव करें", saveImage: "इमेज सेव करें", saving: "बना रहे हैं…", printLink: "यह अनुमान फिर खोलें:", tapToReopen: "इसी आँकड़ों के साथ खोलने के लिए यह लिंक दबाएँ", madeWith: "agentcost.wyrdwerk.com · {date}",
       perMonth: "/महीना", examples: "उदाहरण देखें:",
       tierLabel: "एजेंट कौन-सा मॉडल चलाएगा?", tierSub: "{model} · इंटेलिजेंस {iq} · ${pin}/{pout} प्रति M टोकन",
       tiers: { cheap: "सस्ता", balanced: "संतुलित", frontier: "सबसे तेज़", custom: "और…" },
@@ -226,7 +228,7 @@
   }
 
   // Model tier: three pinned models from TokenWatch; switching recomputes the receipt live.
-  function tierSwitch(cfg, tier, s) {
+  function tierSwitch(cfg, tier, s, modelLine) {
     const wrap = document.createElement("div"); wrap.className = "tier";
     const lab = document.createElement("div"); lab.className = "k"; lab.textContent = s.tierLabel;
     const seg = document.createElement("div"); seg.className = "seg"; seg.setAttribute("role", "radiogroup"); seg.setAttribute("aria-label", s.tierLabel);
@@ -242,11 +244,7 @@
     radioKeys(seg);
     wrap.append(lab, seg);
     if (state.searchOpen) wrap.appendChild(searchPanel(s));
-    const m = Engine.resolveModel(cfg, tier);
-    const sub = document.createElement("small");
-    const via = tier === "custom" && m.provider && m.provider !== "openrouter" ? " via " + m.provider : "";
-    sub.textContent = fmt(s.tierSub, { model: (m.display_name || m.id) + via, iq: m.intelligence_index ?? "—", pin: m.input_usd_per_million, pout: m.output_usd_per_million })
-      + (tier === "custom" ? " · " + fmt(s.customLive, { date: m.pricing_snapshot_date, source: s.sources[m.pricing_source] || s.sources.tokenwatch }) : "");
+    const sub = document.createElement("small"); sub.className = "modelline"; sub.textContent = modelLine;
     wrap.appendChild(sub); return wrap;
   }
 
@@ -341,7 +339,8 @@
     box.append(srcRow, inp, hint, list); return box;
   }
 
-  function renderReceipt() {
+  // Everything the receipt says, as plain data. Rendered three ways: DOM (below), print CSS, and the PNG canvas.
+  function receiptModel() {
     const a = state.frozen ? state.frozen.archetype : archetypeById(state.archetype_id);
     const cfg = state.frozen ? state.frozen.config : DATA.config;
     let tier = TIERS.includes(state.model_tier) ? state.model_tier : cfg.default_tier;
@@ -350,50 +349,146 @@
     const model = Engine.resolveModel(cfgUsed, tier);
     const res = Engine.estimate(a, cfgUsed, { ...state.answers, model_tier: tier });
     const s = t();
-    const box = $("#receipt");
-    box.replaceChildren();
-
-    const h = document.createElement("h2"); h.textContent = s.receiptTitle;
-    const sub = document.createElement("p"); sub.className = "sub";
-    sub.textContent = fmt(s[state.source === "manual" ? "picked" : "closest"], { name: archName(a) }) + " · " + s.receiptSub;
-    box.append(h, sub);
-
-    box.appendChild(line(s.setup, rangeInr(res.setup)));
-    box.appendChild(tierSwitch(cfgUsed, tier, s));
-    box.appendChild(line(s.run, rangeInr(res.run) + s.perMonth, fmt(s.runSub, { model: model.display_name || model.id })));
-    box.appendChild(line(s.oversight, rangeInr(res.oversight) + s.perMonth, fmt(s.oversightSub, { hours: r1(res.oversightHours) })));
-    box.appendChild(line(s.baseline, rangeInr(res.baseline) + s.perMonth,
-      fmt(s.baselineSub, { hours: r1(res.baselineHours), wage: rangeInr(res.assumptions.wage_used_inr_per_hour) })));
-    box.appendChild(line(s.net, rangeInr(res.net) + s.perMonth, null, "total"));
-
     let be;
     if (res.breakEven === "never") be = s.be_never;
     else if (res.breakEven === "possible") be = s.be_possible;
     else be = fmt(s.be_assured, { lo: Math.ceil(res.payback[0]), hi: Math.ceil(res.payback[1]) });
-    box.appendChild(line(s.breakEven, be));
+    const via = tier === "custom" && model.provider && model.provider !== "openrouter" ? " via " + model.provider : "";
+    return {
+      a, cfg, cfgUsed, tier, model, res, s,
+      title: s.receiptTitle,
+      sub: fmt(s[state.source === "manual" ? "picked" : "closest"], { name: archName(a) }) + " · " + s.receiptSub,
+      modelLine: fmt(s.tierSub, { model: (model.display_name || model.id) + via, iq: model.intelligence_index ?? "—", pin: model.input_usd_per_million, pout: model.output_usd_per_million })
+        + (tier === "custom" ? " · " + fmt(s.customLive, { date: model.pricing_snapshot_date, source: s.sources[model.pricing_source] || s.sources.tokenwatch }) : ""),
+      lines: [
+        { k: s.setup, v: rangeInr(res.setup) },
+        { k: s.run, v: rangeInr(res.run) + s.perMonth, sub: fmt(s.runSub, { model: model.display_name || model.id }) },
+        { k: s.oversight, v: rangeInr(res.oversight) + s.perMonth, sub: fmt(s.oversightSub, { hours: r1(res.oversightHours) }) },
+        { k: s.baseline, v: rangeInr(res.baseline) + s.perMonth, sub: fmt(s.baselineSub, { hours: r1(res.baselineHours), wage: rangeInr(res.assumptions.wage_used_inr_per_hour) }) },
+        { k: s.net, v: rangeInr(res.net) + s.perMonth, total: true },
+        { k: s.breakEven, v: be },
+      ],
+      verdict: res.verdict, verdictText: s.verdict[res.verdict],
+      drivers: state.language === "hi" && a.price_drivers_hi ? a.price_drivers_hi : a.price_drivers,
+      notWorth: (state.language === "hi" && a.when_not_worth_it_hi) || a.when_not_worth_it,
+      assumptions: fmt(s.assumptions, { days: cfg.working_days_per_month, fx: cfg.usd_to_inr, date: model.pricing_snapshot_date || "—" }),
+      foot1: s.foot1, foot2: s.foot2, cta: s.cta,
+      madeWith: fmt(s.madeWith, { date: new Date().toISOString().slice(0, 10) }),
+    };
+  }
 
-    const v = document.createElement("div"); v.className = "verdict " + res.verdict; v.textContent = s.verdict[res.verdict];
+  function renderReceipt() {
+    const R = receiptModel();
+    const { a, cfg, cfgUsed, tier, model, res, s } = R;
+    const box = $("#receipt");
+    box.replaceChildren();
+
+    const h = document.createElement("h2"); h.textContent = R.title;
+    const sub = document.createElement("p"); sub.className = "sub"; sub.textContent = R.sub;
+    box.append(h, sub);
+
+    R.lines.forEach((L, i) => {
+      box.appendChild(line(L.k, L.v, L.sub || null, L.total ? "total" : undefined));
+      if (i === 0) box.appendChild(tierSwitch(cfgUsed, tier, s, R.modelLine));
+    });
+
+    const v = document.createElement("div"); v.className = "verdict " + R.verdict; v.textContent = R.verdictText;
     box.appendChild(v);
 
     const h3 = document.createElement("h3"); h3.textContent = s.drivers;
     const ul = document.createElement("ul");
-    (state.language === "hi" && a.price_drivers_hi ? a.price_drivers_hi : a.price_drivers).forEach((d) => { const li = document.createElement("li"); li.textContent = d; ul.appendChild(li); });
+    R.drivers.forEach((d) => { const li = document.createElement("li"); li.textContent = d; ul.appendChild(li); });
     box.append(h3, ul);
-    const notWorth = (state.language === "hi" && a.when_not_worth_it_hi) || a.when_not_worth_it;
-    if (notWorth) {
+    if (R.notWorth) {
       const h4 = document.createElement("h3"); h4.textContent = s.notWorth;
-      const p = document.createElement("p"); p.textContent = notWorth;
+      const p = document.createElement("p"); p.textContent = R.notWorth;
       box.append(h4, p);
     }
 
     const foot = document.createElement("div"); foot.className = "foot";
-    const p0 = document.createElement("p");
-    p0.textContent = fmt(s.assumptions, { days: cfg.working_days_per_month, fx: cfg.usd_to_inr, date: model.pricing_snapshot_date || "—" });
-    const p1 = document.createElement("p"); p1.textContent = s.foot1;
-    const p2 = document.createElement("p"); p2.textContent = s.foot2;
-    const cta = document.createElement("a"); cta.className = "cta"; cta.href = "mailto:contact@wyrdwerk.com"; cta.textContent = s.cta;
-    foot.append(p0, p1, p2, cta);
+    const p0 = document.createElement("p"); p0.textContent = R.assumptions;
+    const p1 = document.createElement("p"); p1.textContent = R.foot1;
+    const p2 = document.createElement("p"); p2.textContent = R.foot2;
+    const cta = document.createElement("a"); cta.className = "cta"; cta.href = "mailto:contact@wyrdwerk.com"; cta.textContent = R.cta;
+    // Print-only: the share link, so a PDF can be reopened. Hidden on screen via CSS.
+    const pl = document.createElement("p"); pl.className = "print-only";
+    const plA = document.createElement("a"); plA.href = location.origin + location.pathname + "#" + encodeState();
+    plA.textContent = location.host + " → " + s.tapToReopen; // full state stays in the href; PDF viewers keep the link
+    pl.append(s.printLink + " ", plA, " · " + R.madeWith);
+    foot.append(p0, p1, p2, cta, pl);
     box.appendChild(foot);
+  }
+
+  // ---------- Save as PDF (browser print) / Save as image (hand-drawn canvas, no libraries) ----------
+  function wrapText(ctx, text, maxWidth) {
+    const words = String(text).split(/\s+/), lines = []; let cur = "";
+    words.forEach((w) => { const test = cur ? cur + " " + w : w; if (ctx.measureText(test).width > maxWidth && cur) { lines.push(cur); cur = w; } else cur = test; });
+    if (cur) lines.push(cur); return lines;
+  }
+  function drawReceiptPng() {
+    const R = receiptModel();
+    const W = 1080, PAD = 64, scale = 1; // 1080 px wide: crisp on phones, forwards well on WhatsApp
+    const cv = document.createElement("canvas"); cv.width = W; cv.height = 400; // resized after measuring
+    const ctx = cv.getContext("2d");
+    const FONT = 'system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans Devanagari", sans-serif';
+    const f = (px, weight) => { ctx.font = (weight || 400) + " " + px + "px " + FONT; };
+    const ink = "#1b1b1b", muted = "#6b665c", lineC = "#d9d2c3", paper = "#fbf8f1";
+    const VERDICT = { worth_it: ["#e6f4ea", "#1e6b3a"], assist_first: ["#fff4e0", "#8a5a00"], leave_it: ["#fbe4e0", "#a32a12"] };
+    // Two passes: measure, then draw. `draw` is false on the first pass.
+    function pass(draw) {
+      let y = PAD;
+      const text = (str, x, size, weight, color, maxW, align, lh) => {
+        f(size, weight); ctx.fillStyle = color || ink; ctx.textAlign = align || "left";
+        const ls = maxW ? wrapText(ctx, str, maxW) : [String(str)];
+        ls.forEach((l) => { y += size * (lh || 1.15); if (draw) ctx.fillText(l, x, y); });
+        return ls.length;
+      };
+      const rule = (dashed) => { y += 18; if (draw) { ctx.strokeStyle = dashed ? lineC : ink; ctx.lineWidth = dashed ? 2 : 3; ctx.setLineDash(dashed ? [6, 6] : []); ctx.beginPath(); ctx.moveTo(PAD, y); ctx.lineTo(W - PAD, y); ctx.stroke(); ctx.setLineDash([]); } y += 6; };
+      text(R.title.toUpperCase(), PAD, 44, 700); y += 8;
+      text(R.sub, PAD, 26, 400, muted, W - 2 * PAD); y += 10; rule(true);
+      R.lines.forEach((L, i) => {
+        y += 14;
+        const yTop = y;
+        // value right-aligned first to know its width, key wraps in the remaining space
+        f(L.total ? 34 : 32, 700); const vw = ctx.measureText(L.v).width;
+        const keyW = Math.max(240, W - 2 * PAD - vw - 30);
+        const yKey = y; const n = text(L.k, PAD, L.total ? 32 : 30, L.total ? 700 : 400, ink, keyW);
+        const yAfterKey = y; y = yKey; text(L.v, W - PAD, L.total ? 34 : 32, 700, ink, null, "right"); y = Math.max(y, yAfterKey);
+        if (L.sub) { y += 2; text(L.sub, PAD, 24, 400, muted, W - 2 * PAD); }
+        if (i === 0) { y += 6; text(R.modelLine, PAD, 24, 400, muted, W - 2 * PAD); }
+        void yTop; void n;
+        rule(L.total || i === R.lines.length - 1 ? false : true);
+      });
+      // verdict pill
+      y += 20; const [bg, fg] = VERDICT[R.verdict] || ["#eee", ink];
+      if (draw) { ctx.fillStyle = bg; ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(PAD, y, W - 2 * PAD, 92, 16); else ctx.rect(PAD, y, W - 2 * PAD, 92); ctx.fill(); }
+      y += 14; text(R.verdictText, W / 2, 38, 700, fg, null, "center"); y += 40;
+      y += 26; text(R.s.drivers.toUpperCase(), PAD, 26, 700, muted); y += 6;
+      R.drivers.forEach((d) => { y += 6; text("•  " + d, PAD, 26, 400, ink, W - 2 * PAD, "left", 1.25); });
+      if (R.notWorth) { y += 22; text(R.s.notWorth.toUpperCase(), PAD, 26, 700, muted); y += 6; text(R.notWorth, PAD, 26, 400, ink, W - 2 * PAD, "left", 1.25); }
+      y += 22; rule(true); y += 6;
+      [R.assumptions, R.foot1, R.foot2, R.cta, R.madeWith].forEach((p) => { y += 8; text(p, PAD, 22, 400, muted, W - 2 * PAD, "left", 1.25); });
+      return y + PAD;
+    }
+    const H = pass(false);
+    cv.height = Math.ceil(H * scale);
+    ctx.fillStyle = paper; ctx.fillRect(0, 0, W, cv.height);
+    pass(true);
+    return cv;
+  }
+  async function saveImage() {
+    const btn = $("#saveImage"); const label = btn.textContent; btn.disabled = true; btn.textContent = t().saving;
+    try {
+      const cv = drawReceiptPng();
+      const blob = await new Promise((res) => cv.toBlob(res, "image/png"));
+      const name = "whats-the-cost-" + new Date().toISOString().slice(0, 10) + ".png";
+      const file = new File([blob], name, { type: "image/png" });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try { await navigator.share({ files: [file], title: t().title }); return; } catch (e) { if (e?.name === "AbortError") return; }
+      }
+      const url = URL.createObjectURL(blob); const link = document.createElement("a"); link.href = url; link.download = name; document.body.appendChild(link); link.click(); link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+    } finally { btn.disabled = false; btn.textContent = label; }
   }
 
   // ---------- screens ----------
@@ -533,6 +628,9 @@
       state.answers = { tasks_per_day: null, current_handling: null, minutes_per_task: null };
       $("#description").value = ""; show("#screen-describe"); applyI18n();
     };
+    // Optional chaining: during a service-worker upgrade the cached index.html may predate these buttons.
+    const pdfBtn = $("#savePdf"); if (pdfBtn) pdfBtn.onclick = () => window.print();
+    const imgBtn = $("#saveImage"); if (imgBtn) imgBtn.onclick = () => saveImage().catch(() => {});
     $("#copyLink").onclick = async () => {
       location.hash = encodeState();
       try { await navigator.clipboard.writeText(location.href); $("#copyLink").textContent = t().copied; setTimeout(applyI18n, 1500); } catch {}

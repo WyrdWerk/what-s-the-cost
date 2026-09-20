@@ -60,6 +60,7 @@ A weak match is never dressed up as a confident verdict.
 | Line | What it is |
 |---|---|
 | Agent setup (one time) | Range in ₹ |
+| Save as PDF / Save as image | Both are pure client-side, no model call, no dependency. **PDF** = `window.print()` + `@media print` stylesheet (hides header, buttons, tier switch, search; A4; one page; footer carries a clickable "reopen" link whose `href` is the full share URL). **Image** = the receipt is redrawn on a `<canvas>` (1080 px wide, `drawReceiptPng()` in `app.js`) from the same `receiptModel()` data as the DOM, then handed to the phone's share sheet (`navigator.share` with a PNG file) or downloaded. Devanagari is shaped by the browser's own text engine, so Hindi works without embedded fonts |
 | Which model runs the agent? | Switch **Cheap / Balanced / Frontier / Other…**. The three tiers are pinned TokenWatch models; **Other…** opens a search box with two price sources: **TokenWatch** (one `GET /api/v1/models?search=<text>&limit=10` per keystroke, first-party prices) or **OpenRouter** (public `GET https://openrouter.ai/api/v1/models`, no API key, ~450 rows fetched once per page load only after the user picks that source, filtered client-side, per-token prices converted to per-million once). Rows are labelled with their source because the same model can cost differently on OpenRouter than from its maker. Switching recomputes the receipt live; tier and any picked model are frozen into the share link |
 | Monthly run cost | Model usage on the selected tier's model |
 | Your oversight time | Hours/month **and** ₹/month, shown separately |
@@ -264,7 +265,7 @@ Built and deployed in this order; each layer works without the ones after it.
 2. **Model classification** — layered on the same flow. Any failure is silent to the user.
 3. **Canned scenarios** — keyword match on the description when the model returns `null`; also the
    demo chips.
-4. **Service worker** — `public/sw.js` precaches the shell and data files (version string `VERSION` in `sw.js`, currently `ckh-v10`), cache-first
+4. **Service worker** — `public/sw.js` precaches the shell and data files (version string `VERSION` in `sw.js`, currently `ckh-v11`), cache-first
    for same-origin GETs, never caches `/api/*`. **Acceptance test passed:** a *new* estimate was
    completed with the network off (page from cache → typed description → API unreachable → keyword
    match → receipt).
@@ -431,7 +432,7 @@ curl -s -X POST https://agentcost.wyrdwerk.com/api/estimate -H 'content-type: ap
   and can change it.
 - **`language` from the classifier is informational**; the UI language follows the toggle.
 - No PDF export, WhatsApp integration, or voice — deliberately out of scope.
-- The service worker version string (`ckh-v10` in `sw.js`) must be bumped when cached files change
+- The service worker version string (`ckh-v11` in `sw.js`) must be bumped when cached files change
   in ways that matter offline.
 
 ## 15. Decision log
@@ -442,6 +443,7 @@ curl -s -X POST https://agentcost.wyrdwerk.com/api/estimate -H 'content-type: ap
 | 2026-09-20 | Run model pinned to `claude-fable-5.1` from TokenWatch | Founder instruction; "modify later" |
 | 2026-09-20 | `_headers`: CSP + JS `max-age=0`; single-choice groups use ARIA radiogroup/radio with arrow keys; 44 px targets everywhere | Measured 4 h JS cache on prod; APG radio pattern; WCAG 2.5.5 |
 | 2026-09-20 | Independent red-team pass ([thread](https://ampcode.com/threads/T-01a0be04-42fa-7675-b6ff-d6da2c7e64bc)) → engine input/output contract (`RangeError`), receipt always prints both bounds (even ₹0 – ₹0), share-link hardening, language arrow keys, 44 px tier/source buttons, TokenWatch search abort + 10-row cap, OpenRouter 5000-row cap, Function 413 above 8 KB | Findings #2–#8 of the report; #1 (rate limiting) and #5 (zone Browser Cache TTL) are Cloudflare-dashboard actions for the founder; #9 was a false positive (no U+FFFD in repo or prod) |
+| 2026-09-20 | PDF via browser print + PNG via hand-drawn canvas; no PDF/HTML-to-canvas library | Founder asked for PDF "without LLM usage" and an image fallback; jsPDF cannot shape Devanagari, html2canvas adds ~600 KB and a CSP change |
 | 2026-09-20 | "Other…" model search via TokenWatch (`?search=&limit=10`), no BYO API key | Founder asked for wider choice; pricing needs no key |
 | 2026-09-20 | OpenRouter added as a second "Other…" source, still no key field | Founder proposed a client-side OpenRouter key + picker; `/api/v1/models` is public so the key adds only privacy risk. Catalog (~739 KB) loads once, only on explicit source pick — accepted exception to "never fetch the catalog", flagged to founder |
 | 2026-09-20 | Superseded: three model tiers (Gemini 3.8 Flash / Sonnet 5 / Fable 5.1) chosen on the receipt, default `balanced` | Founder chose "fixed tiers" over benchmark-suggested model; ~130× price spread made a single pinned model misleading |

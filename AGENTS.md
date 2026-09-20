@@ -123,6 +123,7 @@ Repo: https://github.com/WyrdWerk/what-s-the-cost (public — no secrets, no cli
   partial result. Ranges are sorted on entry, so `[hi, lo]` inputs are legal.
 - `decodeState` in `app.js` rebuilds the frozen objects with known keys only and dry-runs the engine.
   When adding a field to the share payload, add it to that allow-list or it will be dropped.
+- `receiptModel()` is the single source for what the receipt says; DOM render, print and the PNG canvas all read it. Add new receipt content there, not in three places.
 - Every rupee figure renders through `rangeInr`, which always prints two bounds. Do not "tidy" equal
   bounds into one number.
 - `/api/estimate` returns 413 above `MAX_BODY_BYTES` (8 KB) before parsing.
