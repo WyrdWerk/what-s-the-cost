@@ -28,7 +28,7 @@
       foot2: "We do not save your workflow in an application database. AI mode sends it to Anthropic; their retention policies apply.",
       cta: "Talk to WyrdWerk → contact@wyrdwerk.com",
       perMonth: "/mo",
-      aiThinking: "Reading your description…", aiNone: "",
+      aiThinking: "Reading your description…", aiFallback: "Couldn't read that automatically — tap the closest match below.",
     },
     hi: {
       title: "Cost Kitna Hoga?",
@@ -53,11 +53,11 @@
       foot2: "हम आपका वर्कफ़्लो किसी एप्लिकेशन डेटाबेस में नहीं रखते। AI मोड इसे Anthropic को भेजता है; उनकी रिटेंशन नीतियाँ लागू होती हैं।",
       cta: "WyrdWerk से बात करें → contact@wyrdwerk.com",
       perMonth: "/महीना",
-      aiThinking: "आपका विवरण पढ़ रहे हैं…", aiNone: "",
+      aiThinking: "आपका विवरण पढ़ रहे हैं…", aiFallback: "अपने आप समझ नहीं आया — नीचे सबसे नज़दीकी काम चुनिए।",
     },
   };
   const TAPS = {
-    tasks_per_day: [5, 10, 20, 50, 100],
+    tasks_per_day: [1, 5, 10, 20, 50, 100],
     minutes_per_task: [2, 5, 10, 20, 30],
     current_handling: ["me", "staff", "nobody"],
   };
@@ -114,8 +114,9 @@
       b.onclick = () => { state.archetype_id = a.id; state.source = "manual"; renderChips(); $("#toQuestions").disabled = false; };
       box.appendChild(b);
     });
-    $("#toQuestions").disabled = !state.archetype_id;
+    updateNext();
   }
+  const updateNext = () => { $("#toQuestions").disabled = !state.archetype_id && $("#description").value.trim().length < 8; };
 
   function renderTaps() {
     document.querySelectorAll(".taps").forEach((box) => {
@@ -180,11 +181,12 @@
 
     const h3 = document.createElement("h3"); h3.textContent = s.drivers;
     const ul = document.createElement("ul");
-    a.price_drivers.forEach((d) => { const li = document.createElement("li"); li.textContent = d; ul.appendChild(li); });
+    (state.language === "hi" && a.price_drivers_hi ? a.price_drivers_hi : a.price_drivers).forEach((d) => { const li = document.createElement("li"); li.textContent = d; ul.appendChild(li); });
     box.append(h3, ul);
-    if (a.when_not_worth_it) {
+    const notWorth = (state.language === "hi" && a.when_not_worth_it_hi) || a.when_not_worth_it;
+    if (notWorth) {
       const h4 = document.createElement("h3"); h4.textContent = s.notWorth;
-      const p = document.createElement("p"); p.textContent = a.when_not_worth_it;
+      const p = document.createElement("p"); p.textContent = notWorth;
       box.append(h4, p);
     }
 
@@ -237,7 +239,8 @@
         || !fc.run_model || !Number.isFinite(fc.run_model.input_usd_per_million) || !Number.isFinite(fc.run_model.output_usd_per_million)) return null;
       fa.name_en = String(fa.name_en || ""); fa.name_hi = String(fa.name_hi || "");
       fa.price_drivers = Array.isArray(fa.price_drivers) ? fa.price_drivers.slice(0, 3).map(String) : [];
-      fa.when_not_worth_it = String(fa.when_not_worth_it || "");
+      fa.when_not_worth_it = String(fa.when_not_worth_it || ""); fa.when_not_worth_it_hi = String(fa.when_not_worth_it_hi || "");
+      fa.price_drivers_hi = Array.isArray(fa.price_drivers_hi) ? fa.price_drivers_hi.slice(0, 3).map(String) : null;
       return p;
     } catch { return null; }
   }
@@ -265,10 +268,24 @@
   async function init() {
     await loadData();
     document.querySelectorAll(".lang button").forEach((b) => { b.onclick = () => { state.language = b.dataset.lang; applyI18n(); }; });
-    $("#description").oninput = (e) => { state.description = e.target.value; };
+    $("#description").oninput = (e) => { state.description = e.target.value; $("#aiStatus").textContent = ""; updateNext(); };
 
     $("#toQuestions").onclick = async () => {
-      state.description = $("#description").value;
+      state.description = $("#description").value.trim();
+      const btn = $("#toQuestions");
+      // A tapped chip is an explicit choice: no model call. Otherwise ask the classifier, with manual as fallback.
+      if (!state.archetype_id && state.description.length >= 8) {
+        btn.disabled = true; $("#aiStatus").textContent = t().aiThinking;
+        const ai = await classify();
+        btn.disabled = false; $("#aiStatus").textContent = "";
+        if (ai) {
+          state.archetype_id = ai.archetype_id; state.source = "ai";
+          state.answers = { tasks_per_day: ai.tasks_per_day, current_handling: ai.current_handling, minutes_per_task: ai.minutes_per_task };
+          renderChips();
+        } else {
+          $("#aiStatus").textContent = t().aiFallback; return;
+        }
+      }
       if (!state.archetype_id) return;
       show("#screen-questions"); renderTaps(); renderMatchLabel();
     };

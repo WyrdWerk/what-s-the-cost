@@ -6,102 +6,264 @@
       "name_en": "Quotation follow-up (WhatsApp)",
       "name_hi": "कोटेशन फॉलो-अप (WhatsApp)",
       "does": "Reads each sent quotation, drafts a polite follow-up on WhatsApp, logs the reply and flags hot leads for you.",
-      "setup_hours": [12, 30],
-      "steps_per_task": [3, 6],
-      "tokens_per_step": { "input": [1500, 4000], "output": [150, 400] },
+      "setup_hours": [
+        12,
+        30
+      ],
+      "steps_per_task": [
+        3,
+        6
+      ],
+      "tokens_per_step": {
+        "input": [
+          1500,
+          4000
+        ],
+        "output": [
+          150,
+          400
+        ]
+      },
       "review_min_per_day": 10,
-      "baseline_wage_assumption": { "inr_per_hour": [120, 200], "note": "sales/office staff, Indore SME" },
+      "baseline_wage_assumption": {
+        "inr_per_hour": [
+          120,
+          200
+        ],
+        "note": "sales/office staff, Indore SME"
+      },
       "price_drivers": [
         "WhatsApp Business API access and message charges are extra",
         "How many past messages the agent must read before each follow-up",
         "Whether replies must update your CRM or Excel automatically"
       ],
-      "when_not_worth_it": "Under 5 quotations a day, or if you already call every customer personally and that call is what closes the sale."
+      "when_not_worth_it": "Under 5 quotations a day, or if you already call every customer personally and that call is what closes the sale.",
+      "price_drivers_hi": [
+        "WhatsApp Business API और मैसेज शुल्क अलग से लगते हैं",
+        "हर फॉलो-अप से पहले एजेंट को कितने पुराने मैसेज पढ़ने हैं",
+        "जवाब अपने आप CRM या Excel में दर्ज होना चाहिए या नहीं"
+      ],
+      "when_not_worth_it_hi": "दिन में 5 से कम कोटेशन हों, या आप हर ग्राहक को खुद फ़ोन करते हों और वही कॉल सौदा पक्का करती हो।"
     },
     {
       "id": "invoice_po_entry",
       "name_en": "Invoice / PO entry",
       "name_hi": "इनवॉइस / PO एंट्री",
       "does": "Reads incoming invoices or purchase orders (PDF, photo, email) and enters line items into your accounting or ERP.",
-      "setup_hours": [16, 40],
-      "steps_per_task": [2, 5],
-      "tokens_per_step": { "input": [2000, 6000], "output": [200, 600] },
+      "setup_hours": [
+        16,
+        40
+      ],
+      "steps_per_task": [
+        2,
+        5
+      ],
+      "tokens_per_step": {
+        "input": [
+          2000,
+          6000
+        ],
+        "output": [
+          200,
+          600
+        ]
+      },
       "review_min_per_day": 15,
-      "baseline_wage_assumption": { "inr_per_hour": [100, 180], "note": "data-entry / accounts assistant" },
+      "baseline_wage_assumption": {
+        "inr_per_hour": [
+          100,
+          180
+        ],
+        "note": "data-entry / accounts assistant"
+      },
       "price_drivers": [
         "Photo quality and handwritten invoices push tokens and errors up",
         "Whether your accounting software has an import API or needs manual paste",
         "GST validation and duplicate checks add steps"
       ],
-      "when_not_worth_it": "If fewer than 10 documents a day, or your accountant already batches them weekly in an hour."
+      "when_not_worth_it": "If fewer than 10 documents a day, or your accountant already batches them weekly in an hour.",
+      "price_drivers_hi": [
+        "धुंधली फोटो और हाथ से लिखे बिल टोकन और गलतियाँ दोनों बढ़ाते हैं",
+        "आपके अकाउंटिंग सॉफ़्टवेयर में इम्पोर्ट API है या मैन्युअल पेस्ट करना पड़ेगा",
+        "GST जाँच और डुप्लीकेट चेक अतिरिक्त कदम जोड़ते हैं"
+      ],
+      "when_not_worth_it_hi": "दिन में 10 से कम दस्तावेज़ हों, या आपका अकाउंटेंट हफ़्ते में एक घंटे में सब कर लेता हो।"
     },
     {
       "id": "billing_inventory",
       "name_en": "Billing + inventory",
       "name_hi": "बिलिंग + इन्वेंटरी",
       "does": "Creates bills from orders and updates stock counts, flagging low stock and mismatches.",
-      "setup_hours": [30, 80],
-      "steps_per_task": [3, 8],
-      "tokens_per_step": { "input": [1500, 5000], "output": [200, 800] },
+      "setup_hours": [
+        30,
+        80
+      ],
+      "steps_per_task": [
+        3,
+        8
+      ],
+      "tokens_per_step": {
+        "input": [
+          1500,
+          5000
+        ],
+        "output": [
+          200,
+          800
+        ]
+      },
       "review_min_per_day": 20,
-      "baseline_wage_assumption": { "inr_per_hour": [100, 180], "note": "billing clerk / store staff" },
+      "baseline_wage_assumption": {
+        "inr_per_hour": [
+          100,
+          180
+        ],
+        "note": "billing clerk / store staff"
+      },
       "price_drivers": [
         "Integration with your billing software (Tally, Vyapar, Zoho, custom) is the biggest cost",
         "Number of SKUs and how messy product names are",
         "Whether the agent may create bills alone or only draft them for approval"
       ],
-      "when_not_worth_it": "If your billing software already does this, or stock is counted physically once a week anyway. A plain billing app is usually the better first step."
+      "when_not_worth_it": "If your billing software already does this, or stock is counted physically once a week anyway. A plain billing app is usually the better first step.",
+      "price_drivers_hi": [
+        "आपके बिलिंग सॉफ़्टवेयर (Tally, Vyapar, Zoho, कस्टम) से जोड़ना सबसे बड़ा खर्च है",
+        "SKU की संख्या और प्रोडक्ट नाम कितने अव्यवस्थित हैं",
+        "एजेंट खुद बिल बनाए या सिर्फ़ ड्राफ्ट करके मंज़ूरी माँगे"
+      ],
+      "when_not_worth_it_hi": "आपका बिलिंग सॉफ़्टवेयर पहले से यह करता हो, या स्टॉक हफ़्ते में एक बार गिना ही जाता हो। साधारण बिलिंग ऐप अक्सर बेहतर पहला कदम है।"
     },
     {
       "id": "catalog_support",
       "name_en": "Catalog support",
       "name_hi": "कैटलॉग सपोर्ट",
       "does": "Answers customer questions about products, prices, sizes and availability from your catalog, and hands off to you when unsure.",
-      "setup_hours": [16, 40],
-      "steps_per_task": [2, 4],
-      "tokens_per_step": { "input": [2000, 6000], "output": [150, 400] },
+      "setup_hours": [
+        16,
+        40
+      ],
+      "steps_per_task": [
+        2,
+        4
+      ],
+      "tokens_per_step": {
+        "input": [
+          2000,
+          6000
+        ],
+        "output": [
+          150,
+          400
+        ]
+      },
       "review_min_per_day": 15,
-      "baseline_wage_assumption": { "inr_per_hour": [100, 180], "note": "counter / phone staff" },
+      "baseline_wage_assumption": {
+        "inr_per_hour": [
+          100,
+          180
+        ],
+        "note": "counter / phone staff"
+      },
       "price_drivers": [
         "Catalog size and how often prices change",
         "Channel: WhatsApp API, website chat, or Instagram DMs each cost differently",
         "How strict the hand-off rules must be for negotiation and complaints"
       ],
-      "when_not_worth_it": "If most questions are price negotiation, or you have under 10 enquiries a day and enjoy answering them yourself."
+      "when_not_worth_it": "If most questions are price negotiation, or you have under 10 enquiries a day and enjoy answering them yourself.",
+      "price_drivers_hi": [
+        "कैटलॉग का आकार और कीमतें कितनी बार बदलती हैं",
+        "चैनल: WhatsApp API, वेबसाइट चैट या Instagram DM — हर एक की लागत अलग",
+        "मोलभाव और शिकायतों पर आपको सौंपने के नियम कितने सख़्त हों"
+      ],
+      "when_not_worth_it_hi": "ज़्यादातर सवाल मोलभाव के हों, या दिन में 10 से कम पूछताछ हों और आप खुद जवाब देना पसंद करते हों।"
     },
     {
       "id": "report_generation",
       "name_en": "Report generation",
       "name_hi": "रिपोर्ट बनाना",
       "does": "Pulls your daily or weekly sales, stock or ledger data and writes a short summary with the numbers that changed.",
-      "setup_hours": [10, 25],
-      "steps_per_task": [2, 5],
-      "tokens_per_step": { "input": [4000, 15000], "output": [500, 2000] },
+      "setup_hours": [
+        10,
+        25
+      ],
+      "steps_per_task": [
+        2,
+        5
+      ],
+      "tokens_per_step": {
+        "input": [
+          4000,
+          15000
+        ],
+        "output": [
+          500,
+          2000
+        ]
+      },
       "review_min_per_day": 10,
-      "baseline_wage_assumption": { "inr_per_hour": [150, 300], "note": "accountant / manager time" },
+      "baseline_wage_assumption": {
+        "inr_per_hour": [
+          150,
+          300
+        ],
+        "note": "accountant / manager time"
+      },
       "price_drivers": [
         "How clean your source data is (one Excel vs. five WhatsApp screenshots)",
         "Report length and how many data sources must be joined",
         "Daily vs. weekly frequency changes run cost 5x"
       ],
-      "when_not_worth_it": "If a pivot table or your accounting software's built-in report already gives you this. Try that first."
+      "when_not_worth_it": "If a pivot table or your accounting software's built-in report already gives you this. Try that first.",
+      "price_drivers_hi": [
+        "आपका डेटा कितना साफ़ है (एक Excel बनाम पाँच WhatsApp स्क्रीनशॉट)",
+        "रिपोर्ट की लंबाई और कितने स्रोत जोड़ने हैं",
+        "रोज़ बनाम हफ़्तावार — चलाने का खर्च 5 गुना बदलता है"
+      ],
+      "when_not_worth_it_hi": "पिवट टेबल या अकाउंटिंग सॉफ़्टवेयर की बनी-बनाई रिपोर्ट पहले से यह देती हो। पहले वह आज़माएँ।"
     },
     {
       "id": "content_pipeline",
       "name_en": "Content pipeline",
       "name_hi": "कंटेंट पाइपलाइन",
       "does": "Drafts product posts, captions and descriptions from your photos and notes, queued for your approval before posting.",
-      "setup_hours": [8, 20],
-      "steps_per_task": [2, 4],
-      "tokens_per_step": { "input": [1000, 3000], "output": [500, 1500] },
+      "setup_hours": [
+        8,
+        20
+      ],
+      "steps_per_task": [
+        2,
+        4
+      ],
+      "tokens_per_step": {
+        "input": [
+          1000,
+          3000
+        ],
+        "output": [
+          500,
+          1500
+        ]
+      },
       "review_min_per_day": 15,
-      "baseline_wage_assumption": { "inr_per_hour": [150, 300], "note": "marketing freelancer / owner time" },
+      "baseline_wage_assumption": {
+        "inr_per_hour": [
+          150,
+          300
+        ],
+        "note": "marketing freelancer / owner time"
+      },
       "price_drivers": [
         "Image generation or editing is priced separately from text",
         "Brand voice tuning: a few examples vs. a detailed style guide",
         "Auto-posting to platforms needs API access and approvals"
       ],
-      "when_not_worth_it": "If you post fewer than 3 times a week, or your customers buy on personal trust rather than social content."
+      "when_not_worth_it": "If you post fewer than 3 times a week, or your customers buy on personal trust rather than social content.",
+      "price_drivers_hi": [
+        "इमेज बनाना या एडिट करना टेक्स्ट से अलग कीमत पर आता है",
+        "ब्रांड की आवाज़: कुछ उदाहरण बनाम विस्तृत स्टाइल गाइड",
+        "प्लेटफ़ॉर्म पर अपने आप पोस्ट करने के लिए API एक्सेस और मंज़ूरी चाहिए"
+      ],
+      "when_not_worth_it_hi": "हफ़्ते में 3 से कम पोस्ट करते हों, या ग्राहक सोशल कंटेंट नहीं बल्कि निजी भरोसे से ख़रीदते हों।"
     }
   ]
 }
