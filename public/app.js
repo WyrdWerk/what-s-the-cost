@@ -27,6 +27,7 @@
       foot1: "Estimate, not a quote. Real price depends on the factors above.",
       foot2: "We do not save your workflow in an application database. AI mode sends it to Anthropic; their retention policies apply.",
       cta: "Talk to WyrdWerk → contact@wyrdwerk.com",
+      perMonth: "/mo",
       aiThinking: "Reading your description…", aiNone: "",
     },
     hi: {
@@ -42,7 +43,7 @@
       receiptTitle: "अनुमान रसीद", receiptSub: "सब आँकड़े ₹ में रेंज हैं। कोटेशन नहीं।",
       setup: "एजेंट सेटअप (एक बार)", run: "मासिक चलाने का खर्च", runSub: "{model} पर मॉडल उपयोग",
       oversight: "आपका निगरानी समय", oversightSub: "{hours} घंटे/महीना एजेंट का काम जाँचने में",
-      baseline: "आज यह काम आपको कितना पड़ता है", baselineSub: "{hours} घंटे/महीना × ₹{wage}/घंटा",
+      baseline: "आज यह काम आपको कितना पड़ता है", baselineSub: "{hours} घंटे/महीना × {wage}/घंटा",
       net: "मासिक बचत", breakEven: "ब्रेक-ईवन",
       be_never: "इन नंबरों पर ब्रेक-ईवन नहीं।", be_possible: "संभव है, पक्का नहीं।", be_assured: "महीना {lo} से {hi}",
       verdict: { worth_it: "एजेंट लायक है", assist_first: "पहले सहायक टूल आज़माएँ", leave_it: "इसे छोड़ दें" },
@@ -51,6 +52,7 @@
       foot1: "यह अनुमान है, कोटेशन नहीं। असली कीमत ऊपर के कारकों पर निर्भर है।",
       foot2: "हम आपका वर्कफ़्लो किसी एप्लिकेशन डेटाबेस में नहीं रखते। AI मोड इसे Anthropic को भेजता है; उनकी रिटेंशन नीतियाँ लागू होती हैं।",
       cta: "WyrdWerk से बात करें → contact@wyrdwerk.com",
+      perMonth: "/महीना",
       aiThinking: "आपका विवरण पढ़ रहे हैं…", aiNone: "",
     },
   };
@@ -60,7 +62,7 @@
     current_handling: ["me", "staff", "nobody"],
   };
   const fmt = (s, vars) => s.replace(/\{(\w+)\}/g, (_, k) => (vars && k in vars ? vars[k] : ""));
-  const inr = (n) => "₹" + Math.round(n).toLocaleString("en-IN");
+  const inr = (n) => (n < 0 ? "−" : "") + "₹" + Math.abs(Math.round(n)).toLocaleString("en-IN");
   const rangeInr = ([lo, hi]) => (Math.round(lo) === Math.round(hi) ? inr(lo) : inr(lo) + " – " + inr(hi));
   const r1 = (n) => (Math.round(n * 10) / 10).toString();
 
@@ -94,7 +96,7 @@
     document.documentElement.lang = state.language;
     document.querySelectorAll("[data-i18n]").forEach((el) => { el.textContent = t()[el.dataset.i18n]; });
     document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => { el.placeholder = t()[el.dataset.i18nPlaceholder]; });
-    $("#langToggle").textContent = state.language === "en" ? "हिन्दी" : "English";
+    document.querySelectorAll(".lang button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.lang === state.language)));
     renderChips();
     renderTaps();
     renderMatchLabel();
@@ -161,11 +163,11 @@
     box.append(h, sub);
 
     box.appendChild(line(s.setup, rangeInr(res.setup)));
-    box.appendChild(line(s.run, rangeInr(res.run) + "/mo", fmt(s.runSub, { model: cfg.run_model.display_name || cfg.run_model.id })));
-    box.appendChild(line(s.oversight, rangeInr(res.oversight) + "/mo", fmt(s.oversightSub, { hours: r1(res.oversightHours) })));
-    box.appendChild(line(s.baseline, rangeInr(res.baseline) + "/mo",
-      fmt(s.baselineSub, { hours: r1(res.baselineHours), wage: rangeInr(res.assumptions.wage_used_inr_per_hour).replace(/₹/g, state.language === "hi" ? "" : "₹") })));
-    box.appendChild(line(s.net, rangeInr(res.net) + "/mo", null, "total"));
+    box.appendChild(line(s.run, rangeInr(res.run) + s.perMonth, fmt(s.runSub, { model: cfg.run_model.display_name || cfg.run_model.id })));
+    box.appendChild(line(s.oversight, rangeInr(res.oversight) + s.perMonth, fmt(s.oversightSub, { hours: r1(res.oversightHours) })));
+    box.appendChild(line(s.baseline, rangeInr(res.baseline) + s.perMonth,
+      fmt(s.baselineSub, { hours: r1(res.baselineHours), wage: rangeInr(res.assumptions.wage_used_inr_per_hour) })));
+    box.appendChild(line(s.net, rangeInr(res.net) + s.perMonth, null, "total"));
 
     let be;
     if (res.breakEven === "never") be = s.be_never;
@@ -262,7 +264,7 @@
   // ---------- wiring ----------
   async function init() {
     await loadData();
-    $("#langToggle").onclick = () => { state.language = state.language === "en" ? "hi" : "en"; applyI18n(); };
+    document.querySelectorAll(".lang button").forEach((b) => { b.onclick = () => { state.language = b.dataset.lang; applyI18n(); }; });
     $("#description").oninput = (e) => { state.description = e.target.value; };
 
     $("#toQuestions").onclick = async () => {

@@ -10,7 +10,10 @@
 <body>
   <header class="top">
     <h1 data-i18n="title">Cost Kitna Hoga?</h1>
-    <button id="langToggle" class="lang" type="button" aria-label="Switch language">हिन्दी</button>
+    <div class="lang" role="group" aria-label="Language">
+      <button id="langEn" type="button" data-lang="en" aria-pressed="true">English</button>
+      <button id="langHi" type="button" data-lang="hi" aria-pressed="false">हिन्दी</button>
+    </div>
   </header>
 
   <main id="app">

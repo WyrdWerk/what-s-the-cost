@@ -13,7 +13,9 @@
 body { margin: 0; background: var(--paper); color: var(--ink); line-height: 1.45; }
 .top { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid var(--line); }
 .top h1 { font-size: 1.25rem; margin: 0; }
-.lang { background: none; border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; font-size: 0.95rem; cursor: pointer; }
+.lang { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
+.lang button { background: none; border: none; padding: 8px 12px; font: inherit; font-size: 0.95rem; cursor: pointer; min-height: 40px; }
+.lang button[aria-pressed="true"] { background: var(--ink); color: #fff; }
 main { max-width: 560px; margin: 0 auto; padding: 16px; }
 .screen.hidden { display: none; }
 .lead { font-size: 1.1rem; margin: 8px 0 12px; }

@@ -1,14 +1,17 @@
 {
-  "_status": "PLACEHOLDER — founder supplies these constants. All are disclosed on the receipt.",
+  "_status": "DRAFT constants. run_model pinned from TokenWatch on 2026-09-20 per founder instruction; owner/setup hourly values are implementer drafts awaiting founder review. All values are disclosed on the receipt.",
   "working_days_per_month": 26,
-  "owner_hourly_value_inr": [0, 0],
-  "setup_hourly_rate_inr": [0, 0],
-  "usd_to_inr": 0,
+  "owner_hourly_value_inr": [500, 1000],
+  "setup_hourly_rate_inr": [1200, 2500],
+  "usd_to_inr": 96,
+  "usd_to_inr_source": "frankfurter.dev 2026-09-18 (95.88) / open.er-api.com 2026-09-20 (95.94), rounded",
   "run_model": {
-    "id": "",
-    "display_name": "",
-    "input_usd_per_million": 0,
-    "output_usd_per_million": 0,
-    "pricing_snapshot_date": ""
+    "id": "anthropic/claude-fable-5.1",
+    "display_name": "Claude Fable 5.1",
+    "provider": "anthropic",
+    "input_usd_per_million": 10,
+    "output_usd_per_million": 50,
+    "pricing_snapshot_date": "2026-09-20",
+    "pricing_source": "https://tokenwatch.wyrdwerk.com/api/v1/models?search=claude-fable-5.1&provider=anthropic"
   }
 }

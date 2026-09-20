@@ -1,83 +1,107 @@
 {
-  "_status": "PLACEHOLDER — every number below is a stand-in so the skeleton renders. Founder-supplied values replace them before any estimate is shown to a real user.",
+  "_status": "DRAFT — numbers below are implementer estimates so the product works today. This file is the founder's edit point; every value here is disclosed as an assumption, never a quote. Units: setup_hours in hours; tokens_per_step per single model call; review_min_per_day in minutes; wages in INR per hour.",
   "archetypes": [
     {
       "id": "quotation_followup",
       "name_en": "Quotation follow-up (WhatsApp)",
       "name_hi": "कोटेशन फॉलो-अप (WhatsApp)",
-      "does": "Chases sent quotations on WhatsApp, logs replies, flags hot leads.",
-      "setup_hours": [0, 0],
-      "steps_per_task": [0, 0],
-      "tokens_per_step": { "input": [0, 0], "output": [0, 0] },
-      "review_min_per_day": 0,
-      "baseline_wage_assumption": { "inr_per_hour": [0, 0], "note": "" },
-      "price_drivers": ["", "", ""],
-      "when_not_worth_it": ""
+      "does": "Reads each sent quotation, drafts a polite follow-up on WhatsApp, logs the reply and flags hot leads for you.",
+      "setup_hours": [12, 30],
+      "steps_per_task": [3, 6],
+      "tokens_per_step": { "input": [1500, 4000], "output": [150, 400] },
+      "review_min_per_day": 10,
+      "baseline_wage_assumption": { "inr_per_hour": [120, 200], "note": "sales/office staff, Indore SME" },
+      "price_drivers": [
+        "WhatsApp Business API access and message charges are extra",
+        "How many past messages the agent must read before each follow-up",
+        "Whether replies must update your CRM or Excel automatically"
+      ],
+      "when_not_worth_it": "Under 5 quotations a day, or if you already call every customer personally and that call is what closes the sale."
     },
     {
       "id": "invoice_po_entry",
       "name_en": "Invoice / PO entry",
       "name_hi": "इनवॉइस / PO एंट्री",
-      "does": "Reads incoming invoices or purchase orders and enters them into your system.",
-      "setup_hours": [0, 0],
-      "steps_per_task": [0, 0],
-      "tokens_per_step": { "input": [0, 0], "output": [0, 0] },
-      "review_min_per_day": 0,
-      "baseline_wage_assumption": { "inr_per_hour": [0, 0], "note": "" },
-      "price_drivers": ["", "", ""],
-      "when_not_worth_it": ""
+      "does": "Reads incoming invoices or purchase orders (PDF, photo, email) and enters line items into your accounting or ERP.",
+      "setup_hours": [16, 40],
+      "steps_per_task": [2, 5],
+      "tokens_per_step": { "input": [2000, 6000], "output": [200, 600] },
+      "review_min_per_day": 15,
+      "baseline_wage_assumption": { "inr_per_hour": [100, 180], "note": "data-entry / accounts assistant" },
+      "price_drivers": [
+        "Photo quality and handwritten invoices push tokens and errors up",
+        "Whether your accounting software has an import API or needs manual paste",
+        "GST validation and duplicate checks add steps"
+      ],
+      "when_not_worth_it": "If fewer than 10 documents a day, or your accountant already batches them weekly in an hour."
     },
     {
       "id": "billing_inventory",
       "name_en": "Billing + inventory",
       "name_hi": "बिलिंग + इन्वेंटरी",
-      "does": "Creates bills and updates stock counts from sales.",
-      "setup_hours": [0, 0],
-      "steps_per_task": [0, 0],
-      "tokens_per_step": { "input": [0, 0], "output": [0, 0] },
-      "review_min_per_day": 0,
-      "baseline_wage_assumption": { "inr_per_hour": [0, 0], "note": "" },
-      "price_drivers": ["", "", ""],
-      "when_not_worth_it": ""
+      "does": "Creates bills from orders and updates stock counts, flagging low stock and mismatches.",
+      "setup_hours": [30, 80],
+      "steps_per_task": [3, 8],
+      "tokens_per_step": { "input": [1500, 5000], "output": [200, 800] },
+      "review_min_per_day": 20,
+      "baseline_wage_assumption": { "inr_per_hour": [100, 180], "note": "billing clerk / store staff" },
+      "price_drivers": [
+        "Integration with your billing software (Tally, Vyapar, Zoho, custom) is the biggest cost",
+        "Number of SKUs and how messy product names are",
+        "Whether the agent may create bills alone or only draft them for approval"
+      ],
+      "when_not_worth_it": "If your billing software already does this, or stock is counted physically once a week anyway. A plain billing app is usually the better first step."
     },
     {
       "id": "catalog_support",
       "name_en": "Catalog support",
       "name_hi": "कैटलॉग सपोर्ट",
-      "does": "Answers customer questions about products, prices and availability.",
-      "setup_hours": [0, 0],
-      "steps_per_task": [0, 0],
-      "tokens_per_step": { "input": [0, 0], "output": [0, 0] },
-      "review_min_per_day": 0,
-      "baseline_wage_assumption": { "inr_per_hour": [0, 0], "note": "" },
-      "price_drivers": ["", "", ""],
-      "when_not_worth_it": ""
+      "does": "Answers customer questions about products, prices, sizes and availability from your catalog, and hands off to you when unsure.",
+      "setup_hours": [16, 40],
+      "steps_per_task": [2, 4],
+      "tokens_per_step": { "input": [2000, 6000], "output": [150, 400] },
+      "review_min_per_day": 15,
+      "baseline_wage_assumption": { "inr_per_hour": [100, 180], "note": "counter / phone staff" },
+      "price_drivers": [
+        "Catalog size and how often prices change",
+        "Channel: WhatsApp API, website chat, or Instagram DMs each cost differently",
+        "How strict the hand-off rules must be for negotiation and complaints"
+      ],
+      "when_not_worth_it": "If most questions are price negotiation, or you have under 10 enquiries a day and enjoy answering them yourself."
     },
     {
       "id": "report_generation",
       "name_en": "Report generation",
       "name_hi": "रिपोर्ट बनाना",
-      "does": "Compiles daily/weekly summaries from your sales, stock or ledger data.",
-      "setup_hours": [0, 0],
-      "steps_per_task": [0, 0],
-      "tokens_per_step": { "input": [0, 0], "output": [0, 0] },
-      "review_min_per_day": 0,
-      "baseline_wage_assumption": { "inr_per_hour": [0, 0], "note": "" },
-      "price_drivers": ["", "", ""],
-      "when_not_worth_it": ""
+      "does": "Pulls your daily or weekly sales, stock or ledger data and writes a short summary with the numbers that changed.",
+      "setup_hours": [10, 25],
+      "steps_per_task": [2, 5],
+      "tokens_per_step": { "input": [4000, 15000], "output": [500, 2000] },
+      "review_min_per_day": 10,
+      "baseline_wage_assumption": { "inr_per_hour": [150, 300], "note": "accountant / manager time" },
+      "price_drivers": [
+        "How clean your source data is (one Excel vs. five WhatsApp screenshots)",
+        "Report length and how many data sources must be joined",
+        "Daily vs. weekly frequency changes run cost 5x"
+      ],
+      "when_not_worth_it": "If a pivot table or your accounting software's built-in report already gives you this. Try that first."
     },
     {
       "id": "content_pipeline",
       "name_en": "Content pipeline",
       "name_hi": "कंटेंट पाइपलाइन",
-      "does": "Drafts product posts, captions and descriptions for review before posting.",
-      "setup_hours": [0, 0],
-      "steps_per_task": [0, 0],
-      "tokens_per_step": { "input": [0, 0], "output": [0, 0] },
-      "review_min_per_day": 0,
-      "baseline_wage_assumption": { "inr_per_hour": [0, 0], "note": "" },
-      "price_drivers": ["", "", ""],
-      "when_not_worth_it": ""
+      "does": "Drafts product posts, captions and descriptions from your photos and notes, queued for your approval before posting.",
+      "setup_hours": [8, 20],
+      "steps_per_task": [2, 4],
+      "tokens_per_step": { "input": [1000, 3000], "output": [500, 1500] },
+      "review_min_per_day": 15,
+      "baseline_wage_assumption": { "inr_per_hour": [150, 300], "note": "marketing freelancer / owner time" },
+      "price_drivers": [
+        "Image generation or editing is priced separately from text",
+        "Brand voice tuning: a few examples vs. a detailed style guide",
+        "Auto-posting to platforms needs API access and approvals"
+      ],
+      "when_not_worth_it": "If you post fewer than 3 times a week, or your customers buy on personal trust rather than social content."
     }
   ]
 }
