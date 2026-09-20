@@ -15,13 +15,16 @@
       who: { me: "Me", staff: "Staff", nobody: "Nobody yet" },
       closest: "Closest match: {name} — your real numbers may differ.",
       picked: "Job type: {name}",
-      receiptTitle: "Estimate receipt", receiptSub: "All figures are ranges in ₹. Not a quote.",
+      receiptTitle: "Estimate receipt", receiptSub: "Figures in ₹, based on average assumptions. Not a quote.",
       setup: "Agent setup (one time)", run: "Monthly run cost", runSub: "model usage on {model}",
       oversight: "Your oversight time", oversightSub: "{hours} hrs/month checking the agent's work",
       baseline: "What this job costs you today", baselineSub: "{hours} hrs/month × {wage}/hr",
-      net: "Monthly saving", breakEven: "Break-even",
-      be_never: "No break-even at these numbers.", be_possible: "Possible, not assured.", be_assured: "Month {lo} to {hi}",
-      verdict: { worth_it: "Worth an agent", assist_first: "Assist first — try a simpler tool", leave_it: "Leave it alone" },
+      net: "Monthly saving", netSub: "before the one-time setup", breakEven: "Break-even",
+      be_never: "Never at these numbers.", be_month: "Month {n}", be_laterSub: "later than the {n}-month period you chose",
+      horizonLabel: "Project over", horizons: { 3: "3 months", 6: "6 months", 12: "12 months" },
+      projToday: "Cost today over {n} months", projAgent: "Cost with agent over {n} months", projAgentSub: "setup {setup} + {monthly}/mo × {n}",
+      projSaving: "Net saving over {n} months", projLoss: "Net loss over {n} months",
+      verdict: { worth_it: "Worth an agent — pays back within the period", assist_first: "Saves monthly, but pays back later — start small", leave_it: "Leave it alone" },
       drivers: "What moves the price", notWorth: "When it is not worth it",
       assumptions: "Assumptions: {days} working days/month · $1 = ₹{fx} · pricing snapshot {date}",
       foot1: "Estimate, not a quote. Real price depends on the factors above.",
@@ -36,7 +39,7 @@
       sources: { tokenwatch: "TokenWatch", openrouter: "OpenRouter" }, sourceLabel: "Price source", orLoading: "Loading OpenRouter list (once)…",
       orHint: "OpenRouter prices are what OpenRouter charges (may differ from the maker's own price). USD per million tokens.",
       aiThinking: "Reading your description…", aiFallback: "Couldn't read that automatically — tap the closest match below.",
-      advSummary: "Advanced: edit the assumptions", advHint: "Ranges, low – high. Leave a field blank to keep the default shown.",
+      advSummary: "Advanced: edit the assumptions", advHint: "Leave a field blank to keep the default shown.",
       adv: { setup_hours: "Setup time (hours)", setup_hourly_rate_inr: "Setup rate (₹/hour)", owner_hourly_value_inr: "Your hour is worth (₹/hour)",
         staff_wage_inr: "Staff wage (₹/hour)", review_min_per_day: "Your review time (min/day)" },
       advEdited: "assumptions edited by you",
@@ -51,13 +54,16 @@
       who: { me: "मैं", staff: "स्टाफ", nobody: "अभी कोई नहीं" },
       closest: "नज़दीकी मिलान: {name} — आपके असली नंबर अलग हो सकते हैं।",
       picked: "काम: {name}",
-      receiptTitle: "अनुमान रसीद", receiptSub: "सब आँकड़े ₹ में रेंज हैं। कोटेशन नहीं।",
+      receiptTitle: "अनुमान रसीद", receiptSub: "आँकड़े ₹ में, औसत मान्यताओं पर। कोटेशन नहीं।",
       setup: "एजेंट सेटअप (एक बार)", run: "मासिक चलाने का खर्च", runSub: "{model} पर मॉडल उपयोग",
       oversight: "आपका निगरानी समय", oversightSub: "{hours} घंटे/महीना एजेंट का काम जाँचने में",
       baseline: "आज यह काम आपको कितना पड़ता है", baselineSub: "{hours} घंटे/महीना × {wage}/घंटा",
-      net: "मासिक बचत", breakEven: "ब्रेक-ईवन",
-      be_never: "इन नंबरों पर ब्रेक-ईवन नहीं।", be_possible: "संभव है, पक्का नहीं।", be_assured: "महीना {lo} से {hi}",
-      verdict: { worth_it: "एजेंट लायक है", assist_first: "पहले सहायक टूल आज़माएँ", leave_it: "इसे छोड़ दें" },
+      net: "मासिक बचत", netSub: "एक बार के सेटअप से पहले", breakEven: "ब्रेक-ईवन",
+      be_never: "इन नंबरों पर कभी नहीं।", be_month: "महीना {n}", be_laterSub: "आपकी चुनी {n} महीने की अवधि के बाद",
+      horizonLabel: "अवधि", horizons: { 3: "3 महीने", 6: "6 महीने", 12: "12 महीने" },
+      projToday: "{n} महीनों में आज का खर्च", projAgent: "{n} महीनों में एजेंट के साथ खर्च", projAgentSub: "सेटअप {setup} + {monthly}/माह × {n}",
+      projSaving: "{n} महीनों में कुल बचत", projLoss: "{n} महीनों में कुल नुकसान",
+      verdict: { worth_it: "एजेंट लायक है — इसी अवधि में वसूल", assist_first: "मासिक बचत है, पर वसूली बाद में — छोटे से शुरू करें", leave_it: "इसे छोड़ दें" },
       drivers: "कीमत किससे बदलती है", notWorth: "कब लायक नहीं",
       assumptions: "मान्यताएँ: {days} कार्य-दिवस/महीना · $1 = ₹{fx} · मूल्य स्नैपशॉट {date}",
       foot1: "यह अनुमान है, कोटेशन नहीं। असली कीमत ऊपर के कारकों पर निर्भर है।",
@@ -72,7 +78,7 @@
       sources: { tokenwatch: "TokenWatch", openrouter: "OpenRouter" }, sourceLabel: "कीमत का स्रोत", orLoading: "OpenRouter सूची लोड हो रही है (एक बार)…",
       orHint: "OpenRouter की कीमत वह है जो OpenRouter लेता है (मूल कंपनी की कीमत से अलग हो सकती है)। USD प्रति मिलियन टोकन।",
       aiThinking: "आपका विवरण पढ़ रहे हैं…", aiFallback: "अपने आप समझ नहीं आया — नीचे सबसे नज़दीकी काम चुनिए।",
-      advSummary: "एडवांस्ड: मान्यताएँ बदलें", advHint: "रेंज, कम – ज़्यादा। खाली छोड़ें तो दिखाया गया डिफ़ॉल्ट रहेगा।",
+      advSummary: "एडवांस्ड: मान्यताएँ बदलें", advHint: "खाली छोड़ें तो दिखाया गया डिफ़ॉल्ट रहेगा।",
       adv: { setup_hours: "सेटअप समय (घंटे)", setup_hourly_rate_inr: "सेटअप दर (₹/घंटा)", owner_hourly_value_inr: "आपके एक घंटे की कीमत (₹/घंटा)",
         staff_wage_inr: "स्टाफ मज़दूरी (₹/घंटा)", review_min_per_day: "आपका जाँच समय (मिनट/दिन)" },
       advEdited: "मान्यताएँ आपने बदली हैं",
@@ -92,7 +98,6 @@
   const fmt = (s, vars) => s.replace(/\{(\w+)\}/g, (_, k) => (vars && k in vars ? vars[k] : ""));
   const inr = (n) => (n < 0 ? "−" : "") + "₹" + Math.abs(Math.round(n)).toLocaleString("en-IN");
   // Always both bounds, even when equal (₹0 – ₹0): the product promise is "ranges, never point estimates".
-  const rangeInr = ([lo, hi]) => inr(lo) + " – " + inr(hi);
   const r1 = (n) => (Math.round(n * 10) / 10).toString();
 
   // ---------- state ----------
@@ -103,18 +108,18 @@
     source: "manual", // "manual" | "ai" | "shared"
     answers: { tasks_per_day: null, current_handling: null, minutes_per_task: null },
     model_tier: null, // "cheap" | "balanced" | "frontier" | "custom"; null → config.default_tier
+    horizon: null, // 3 | 6 | 12 months; null → Engine.DEFAULT_HORIZON
     custom_model: null, // priced model object picked from TokenWatch/OpenRouter search (tier "custom")
     searchOpen: false,
     searchSource: "tokenwatch", // "tokenwatch" | "openrouter" (UI-only, not part of the share link)
     frozen: null, // { archetype, config } snapshot embedded in share links
-    // Advanced panel (Step 2): founder-facing assumptions the user can override. Each key is null (keep default),
-    // a [lo, hi] range, or a number for review_min_per_day. Merged into the archetype/config the engine and
-    // share link already use, so shared receipts carry edits with no separate code path.
+    // Advanced panel (Step 2): founder-facing assumptions the user can override. Each key is null (keep default)
+    // or a number. Merged into the archetype/config the engine and share link already use, so shared receipts
+    // carry edits with no separate code path.
     overrides: { setup_hours: null, setup_hourly_rate_inr: null, owner_hourly_value_inr: null, staff_wage_inr: null, review_min_per_day: null },
     overridesFor: null, // archetype_id the job-specific overrides were typed for; they reset when the job changes
   };
   const ADV_JOB_KEYS = ["setup_hours", "staff_wage_inr", "review_min_per_day"]; // depend on the job; the other two describe the user
-  const ADV_RANGE_KEYS = ["setup_hours", "setup_hourly_rate_inr", "owner_hourly_value_inr", "staff_wage_inr"];
   const ADV_MAX = 1e7; // per-field ceiling; the engine's own contract also rejects absurd values
   let DATA = { archetypes: [], config: null };
 
@@ -236,53 +241,43 @@
   }
   const hasOverrides = () => Object.values(state.overrides).some((v) => v !== null);
   // Archetype + config actually used for a fresh (non-shared) estimate: bundled data with the user's overrides merged in.
-  // Returned objects are copies; DATA is never mutated. Ranges are sorted so lo ≤ hi even if typed the other way round.
+  // Returned objects are copies; DATA is never mutated. Overrides are plain numbers; the engine accepts a number wherever
+  // the data files hold a [low, high] pair.
   function effective() {
     const a = archetypeById(state.archetype_id), cfg = DATA.config, o = state.overrides;
     if (!hasOverrides()) return { archetype: a, config: cfg };
-    const sorted = (r) => [Math.min(r[0], r[1]), Math.max(r[0], r[1])];
     return {
       archetype: { ...a,
-        setup_hours: o.setup_hours ? sorted(o.setup_hours) : a.setup_hours,
+        setup_hours: o.setup_hours ?? a.setup_hours,
         review_min_per_day: o.review_min_per_day ?? a.review_min_per_day,
-        baseline_wage_assumption: { ...a.baseline_wage_assumption, inr_per_hour: o.staff_wage_inr ? sorted(o.staff_wage_inr) : a.baseline_wage_assumption.inr_per_hour } },
+        baseline_wage_assumption: { ...a.baseline_wage_assumption, inr_per_hour: o.staff_wage_inr ?? a.baseline_wage_assumption.inr_per_hour } },
       config: { ...cfg,
-        setup_hourly_rate_inr: o.setup_hourly_rate_inr ? sorted(o.setup_hourly_rate_inr) : cfg.setup_hourly_rate_inr,
-        owner_hourly_value_inr: o.owner_hourly_value_inr ? sorted(o.owner_hourly_value_inr) : cfg.owner_hourly_value_inr },
+        setup_hourly_rate_inr: o.setup_hourly_rate_inr ?? cfg.setup_hourly_rate_inr,
+        owner_hourly_value_inr: o.owner_hourly_value_inr ?? cfg.owner_hourly_value_inr },
     };
   }
 
-  // Step 2 "Advanced" panel: one row per assumption, two number inputs for ranges (one for review minutes).
-  // Blank → null (default). A field only counts as overridden when every input in its row holds a valid number.
+  // Step 2 "Advanced" panel: one number input per assumption. Blank or invalid → null (default).
+  const midOf = (r) => (Array.isArray(r) ? (r[0] + r[1]) / 2 : r);
   function renderAdvanced() {
     const box = $("#advFields");
     if (!box || !state.archetype_id || !DATA.config) return;
     if (state.overridesFor !== state.archetype_id) { ADV_JOB_KEYS.forEach((k) => { state.overrides[k] = null; }); state.overridesFor = state.archetype_id; }
     const d = advDefaults(archetypeById(state.archetype_id), DATA.config), s = t().adv;
     box.replaceChildren();
-    const readNum = (inp) => { const v = inp.value.trim() === "" ? NaN : Number(inp.value); return Number.isFinite(v) && v >= 0 && v <= ADV_MAX ? v : null; };
     Object.keys(d).forEach((key) => {
       const row = document.createElement("div"); row.className = "advrow";
-      const lab = document.createElement("label"); lab.textContent = s[key]; lab.id = "adv-" + key;
-      const inputs = document.createElement("div"); inputs.className = "advinputs"; inputs.setAttribute("role", "group"); inputs.setAttribute("aria-labelledby", lab.id);
-      const isRange = ADV_RANGE_KEYS.includes(key);
-      const cur = state.overrides[key];
-      const mk = (i) => {
-        const inp = document.createElement("input");
-        inp.type = "number"; inp.inputMode = "decimal"; inp.min = "0"; inp.step = "any";
-        inp.placeholder = String(isRange ? d[key][i] : d[key]);
-        inp.setAttribute("aria-label", s[key] + (isRange ? (i === 0 ? " (low)" : " (high)") : ""));
-        if (cur !== null) inp.value = String(isRange ? cur[i] : cur);
-        return inp;
-      };
-      const els = isRange ? [mk(0), mk(1)] : [mk(0)];
+      const inp = document.createElement("input");
+      inp.type = "number"; inp.inputMode = "decimal"; inp.min = "0"; inp.step = "any"; inp.id = "adv-" + key;
+      inp.placeholder = String(midOf(d[key]));
+      if (state.overrides[key] !== null) inp.value = String(state.overrides[key]);
+      const lab = document.createElement("label"); lab.textContent = s[key]; lab.htmlFor = inp.id;
       const commit = () => {
-        const vals = els.map(readNum);
-        state.overrides[key] = vals.every((v) => v !== null) ? (isRange ? vals : vals[0]) : null;
+        const v = inp.value.trim() === "" ? NaN : Number(inp.value);
+        state.overrides[key] = Number.isFinite(v) && v >= 0 && v <= ADV_MAX ? v : null;
       };
-      els.forEach((inp) => { inp.oninput = commit; inp.onchange = commit; });
-      if (isRange) inputs.append(els[0], document.createTextNode("–"), els[1]); else inputs.append(els[0]);
-      row.append(lab, inputs); box.appendChild(row);
+      inp.oninput = commit; inp.onchange = commit;
+      row.append(lab, inp); box.appendChild(row);
     });
   }
 
@@ -413,6 +408,22 @@
     box.append(srcRow, inp, hint, list); return box;
   }
 
+  // Projection horizon: 3 (a quarter, default) / 6 / 12 months; switching recomputes the receipt live.
+  function horizonSwitch(horizon, s) {
+    const wrap = document.createElement("div"); wrap.className = "tier horizon";
+    const lab = document.createElement("div"); lab.className = "k"; lab.textContent = s.horizonLabel;
+    const seg = document.createElement("div"); seg.className = "seg"; seg.setAttribute("role", "radiogroup"); seg.setAttribute("aria-label", s.horizonLabel);
+    Engine.HORIZONS.forEach((h) => {
+      const b = document.createElement("button"); b.type = "button"; b.textContent = s.horizons[h]; b.setAttribute("role", "radio");
+      setChecked(b, h === horizon);
+      b.onclick = () => { state.horizon = h; renderReceipt(); location.hash = encodeState(); focusChecked($(".horizon .seg")); };
+      seg.appendChild(b);
+    });
+    radioKeys(seg);
+    const printed = document.createElement("small"); printed.className = "print-only"; printed.textContent = s.horizons[horizon];
+    wrap.append(lab, seg, printed); return wrap;
+  }
+
   // Everything the receipt says, as plain data. Rendered three ways: DOM (below), print CSS, and the PNG canvas.
   function receiptModel() {
     const { archetype: a, config: cfg } = state.frozen || effective();
@@ -420,26 +431,31 @@
     if (tier === "custom" && !isPricedModel(state.custom_model)) tier = cfg.default_tier;
     const cfgUsed = tier === "custom" ? { ...cfg, run_models: { ...cfg.run_models, custom: state.custom_model } } : cfg;
     const model = Engine.resolveModel(cfgUsed, tier);
-    const res = Engine.estimate(a, cfgUsed, { ...state.answers, model_tier: tier });
+    const horizon = Engine.HORIZONS.includes(state.horizon) ? state.horizon : Engine.DEFAULT_HORIZON;
+    const res = Engine.estimate(a, cfgUsed, { ...state.answers, model_tier: tier, horizon });
     const s = t();
-    let be;
-    if (res.breakEven === "never") be = s.be_never;
-    else if (res.breakEven === "possible") be = s.be_possible;
-    else be = fmt(s.be_assured, { lo: Math.ceil(res.payback[0]), hi: Math.ceil(res.payback[1]) });
+    const be = res.breakEven === "never" ? s.be_never : fmt(s.be_month, { n: res.breakEvenMonth });
     const via = tier === "custom" && model.provider && model.provider !== "openrouter" ? " via " + model.provider : "";
+    const n = horizon;
     return {
-      a, cfg, cfgUsed, tier, model, res, s,
+      a, cfg, cfgUsed, tier, model, res, s, horizon,
       title: s.receiptTitle,
       sub: fmt(s[state.source === "manual" ? "picked" : "closest"], { name: archName(a) }) + " · " + s.receiptSub,
       modelLine: fmt(s.tierSub, { model: (model.display_name || model.id) + via, iq: model.intelligence_index ?? "—", pin: model.input_usd_per_million, pout: model.output_usd_per_million })
         + (tier === "custom" ? " · " + fmt(s.customLive, { date: model.pricing_snapshot_date, source: s.sources[model.pricing_source] || s.sources.tokenwatch }) : ""),
+      // Monthly picture first, then the horizon projection (setup amortised over the period).
       lines: [
-        { k: s.setup, v: rangeInr(res.setup) },
-        { k: s.run, v: rangeInr(res.run) + s.perMonth, sub: fmt(s.runSub, { model: model.display_name || model.id }) },
-        { k: s.oversight, v: rangeInr(res.oversight) + s.perMonth, sub: fmt(s.oversightSub, { hours: r1(res.oversightHours) }) },
-        { k: s.baseline, v: rangeInr(res.baseline) + s.perMonth, sub: fmt(s.baselineSub, { hours: r1(res.baselineHours), wage: rangeInr(res.assumptions.wage_used_inr_per_hour) }) },
-        { k: s.net, v: rangeInr(res.net) + s.perMonth, total: true },
-        { k: s.breakEven, v: be },
+        { k: s.setup, v: inr(res.setup) },
+        { k: s.run, v: inr(res.run) + s.perMonth, sub: fmt(s.runSub, { model: model.display_name || model.id }) },
+        { k: s.oversight, v: inr(res.oversight) + s.perMonth, sub: fmt(s.oversightSub, { hours: r1(res.oversightHours) }) },
+        { k: s.baseline, v: inr(res.baseline) + s.perMonth, sub: fmt(s.baselineSub, { hours: r1(res.baselineHours), wage: inr(res.assumptions.wage_used_inr_per_hour) }) },
+        { k: s.net, v: inr(res.net) + s.perMonth, sub: s.netSub, total: true },
+      ],
+      projection: [
+        { k: fmt(s.projToday, { n }), v: inr(res.costToday) },
+        { k: fmt(s.projAgent, { n }), v: inr(res.costWithAgent), sub: fmt(s.projAgentSub, { setup: inr(res.setup), monthly: inr(res.run + res.oversight), n }) },
+        { k: fmt(res.saving >= 0 ? s.projSaving : s.projLoss, { n }), v: inr(res.saving), total: true },
+        { k: s.breakEven, v: be, sub: res.breakEven === "later" ? fmt(s.be_laterSub, { n }) : null },
       ],
       verdict: res.verdict, verdictText: s.verdict[res.verdict],
       drivers: state.language === "hi" && a.price_drivers_hi ? a.price_drivers_hi : a.price_drivers,
@@ -465,6 +481,8 @@
       box.appendChild(line(L.k, L.v, L.sub || null, L.total ? "total" : undefined));
       if (i === 0) box.appendChild(tierSwitch(cfgUsed, tier, s, R.modelLine));
     });
+    box.appendChild(horizonSwitch(R.horizon, s));
+    R.projection.forEach((L) => box.appendChild(line(L.k, L.v, L.sub || null, L.total ? "total" : undefined)));
 
     const v = document.createElement("div"); v.className = "verdict " + R.verdict; v.textContent = R.verdictText;
     box.appendChild(v);
@@ -531,7 +549,17 @@
         if (L.sub) { y += 2; text(L.sub, PAD, 24, 400, muted, W - 2 * PAD); }
         if (i === 0) { y += 6; text(R.modelLine, PAD, 24, 400, muted, W - 2 * PAD); }
         void yTop; void n;
-        rule(L.total || i === R.lines.length - 1 ? false : true);
+        rule(L.total ? false : true);
+      });
+      y += 14; text(R.s.horizonLabel + ": " + R.s.horizons[R.horizon], PAD, 28, 700, ink); y += 4; rule(true);
+      R.projection.forEach((L) => {
+        y += 14;
+        f(L.total ? 34 : 32, 700); const vw = ctx.measureText(L.v).width;
+        const keyW = Math.max(240, W - 2 * PAD - vw - 30);
+        const yKey = y; text(L.k, PAD, L.total ? 32 : 30, L.total ? 700 : 400, ink, keyW);
+        const yAfterKey = y; y = yKey; text(L.v, W - PAD, L.total ? 34 : 32, 700, ink, null, "right"); y = Math.max(y, yAfterKey);
+        if (L.sub) { y += 2; text(L.sub, PAD, 24, 400, muted, W - 2 * PAD); }
+        rule(L.total ? false : true);
       });
       // verdict pill
       y += 20; const [bg, fg] = VERDICT[R.verdict] || ["#eee", ink];
@@ -577,7 +605,7 @@
     const payload = {
       v: 1, language: state.language, description: state.description.slice(0, 500),
       archetype_id: state.archetype_id, source: state.source, answers: state.answers,
-      model_tier: state.model_tier, custom_model: state.model_tier === "custom" ? state.custom_model : null,
+      model_tier: state.model_tier, horizon: state.horizon, custom_model: state.model_tier === "custom" ? state.custom_model : null,
       frozen: state.frozen || { ...effective(), edited: hasOverrides() },
     };
     const bytes = new TextEncoder().encode(JSON.stringify(payload));
@@ -618,6 +646,7 @@
       };
       if (edited) p.frozen.edited = true; // shared receipt shows "assumptions edited" when the sender used the Advanced panel
       if (p.model_tier != null && !TIERS.includes(p.model_tier)) return null;
+      if (p.horizon != null && !Engine.HORIZONS.includes(p.horizon)) return null;
       if (p.model_tier === "custom") {
         const cm = p.custom_model;
         if (!isPricedModel(cm) || typeof cm.id !== "string") return null;
@@ -631,7 +660,7 @@
       A.price_drivers_hi = Array.isArray(A.price_drivers_hi) ? A.price_drivers_hi.slice(0, 3).map((x) => str(x, 200)) : null;
       // Final gate: the engine itself must accept the frozen numbers (throws RangeError otherwise).
       const cfgUsed = p.model_tier === "custom" ? { ...p.frozen.config, run_models: { ...p.frozen.config.run_models, custom: p.custom_model } } : p.frozen.config;
-      Engine.estimate(A, cfgUsed, { ...p.answers, model_tier: p.model_tier || undefined });
+      Engine.estimate(A, cfgUsed, { ...p.answers, model_tier: p.model_tier || undefined, horizon: p.horizon == null ? undefined : p.horizon });
       p.answers = { tasks_per_day: p.answers.tasks_per_day, minutes_per_task: p.answers.minutes_per_task, current_handling: p.answers.current_handling };
       return p;
     } catch { return null; }
@@ -646,7 +675,8 @@
   const isPricedModelSet = (fc) => fc.run_models
     ? typeof fc.run_models === "object" && ["cheap", "balanced", "frontier"].every((k) => isPricedModel(fc.run_models[k])) && ["cheap", "balanced", "frontier"].includes(fc.default_tier)
     : isPricedModel(fc.run_model);
-  const isFiniteRange = (r) => Array.isArray(r) && r.length === 2 && r.every(isNonNeg) && r[0] <= r[1];
+  // Frozen assumption: a non-negative number (Advanced-panel override) or an ordered [low, high] pair (data files).
+  const isFiniteRange = (r) => isNonNeg(r) || (Array.isArray(r) && r.length === 2 && r.every(isNonNeg) && r[0] <= r[1]);
 
   // ---------- AI classification (layer 2; null = silently stay manual) ----------
   async function classify() {
@@ -698,7 +728,7 @@
     $("#toReceipt").onclick = () => { state.frozen = null; renderReceipt(); show("#screen-receipt"); location.hash = encodeState(); };
     $("#startOver").onclick = () => {
       history.replaceState(null, "", location.pathname);
-      state.archetype_id = null; state.frozen = null; state.source = "manual"; state.model_tier = null; state.custom_model = null; state.searchOpen = false;
+      state.archetype_id = null; state.frozen = null; state.source = "manual"; state.model_tier = null; state.horizon = null; state.custom_model = null; state.searchOpen = false;
       state.answers = { tasks_per_day: null, current_handling: null, minutes_per_task: null };
       Object.keys(state.overrides).forEach((k) => { state.overrides[k] = null; }); state.overridesFor = null;
       const adv = $("#advanced"); if (adv) adv.open = false;
@@ -717,7 +747,7 @@
     if (shared) {
       Object.assign(state, { language: shared.language, description: shared.description, archetype_id: shared.frozen.archetype.id,
         source: ["ai", "canned", "manual"].includes(shared.source) ? shared.source : "shared", answers: shared.answers, frozen: shared.frozen,
-        model_tier: shared.model_tier || null, custom_model: shared.custom_model || null });
+        model_tier: shared.model_tier || null, horizon: shared.horizon ?? null, custom_model: shared.custom_model || null });
       applyI18n(); renderReceipt(); show("#screen-receipt");
     } else {
       applyI18n(); show("#screen-describe");

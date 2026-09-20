@@ -6,7 +6,7 @@ reference, and deployment record. This file adds the rules and the reasons behin
 ## What this is
 
 **Cost Kitna Hoga? / What's the cost?** — a static Cloudflare Pages site plus exactly one Pages
-Function that gives Indian MSME owners an honest, range-only estimate of what an AI agent would
+Function that gives Indian MSME owners an honest estimate of what an AI agent would
 cost for one repetitive job. Owner: Yash Jain, WyrdWerk LLP (Indore). The founder is a
 non-engineer; explain changes in product terms, not framework terms.
 
@@ -15,11 +15,12 @@ Repo: https://github.com/WyrdWerk/what-s-the-cost (public — no secrets, no cli
 
 ## Non-negotiables
 
-1. **Ranges, never point estimates.** Every rupee figure on the receipt is `[low, high]`. Do not
-   add midpoints, averages, or single numbers to the UI.
-2. **Interval arithmetic stays conservative.** `Net.lo = B.lo − R.hi − O.hi`, `Net.hi = B.hi − R.lo − O.lo`.
-   Payback only when both net bounds are positive. Verdicts on the interval, not the midpoint.
-   Change these only with the founder's explicit sign-off and updated tests.
+1. **One number per line, from average assumptions.** Data files keep `[low, high]` pairs; the
+   engine uses each midpoint (founder decision 2026-09-20 — do not reintroduce ranges in the UI).
+   The Advanced panel on Step 2 is the only place a user changes an assumption.
+2. **Setup is amortised over a horizon the owner picks (3/6/12 months).** Break-even is the first
+   month cumulative monthly saving covers setup; the verdict is "pays back within the chosen
+   period". Change formulas only with the founder's explicit sign-off and updated tests.
 3. **Manual mode must always work with the model completely unavailable.** Chips are visible
    immediately; nothing waits on `/api/estimate`. Any classifier failure returns `null` and the
    UI continues.
@@ -71,7 +72,7 @@ Repo: https://github.com/WyrdWerk/what-s-the-cost (public — no secrets, no cli
 - **Select the content block with `type === "text"`**, not `content[0]`.
 - **`source` semantics:** `manual` = user tapped a chip (confident label "Job type"); `ai`,
   `canned`, `shared` = "Closest match — your real numbers may differ". Do not upgrade a weak match.
-- **Share-link decode must validate** version, enums, and finite ranges, and fall back to a fresh
+- **Share-link decode must validate** version, enums, and finite non-negative numbers, and fall back to a fresh
   start on any failure. It must never trigger a model call.
 - **`/api/*` is never cached** by the service worker.
 
@@ -120,19 +121,19 @@ Repo: https://github.com/WyrdWerk/what-s-the-cost (public — no secrets, no cli
 ## Engine and share-link contract (added after the 2026-09-20 red team)
 
 - `Engine.estimate` validates its inputs and throws `RangeError`; never catch-and-continue with a
-  partial result. Ranges are sorted on entry, so `[hi, lo]` inputs are legal.
+  partial result. A pair's order does not matter (midpoint); bare numbers are accepted for overrides.
 - `decodeState` in `app.js` rebuilds the frozen objects with known keys only and dry-runs the engine.
   When adding a field to the share payload, add it to that allow-list or it will be dropped.
 - `receiptModel()` is the single source for what the receipt says; DOM render, print and the PNG canvas all read it. Add new receipt content there, not in three places.
-- Every rupee figure renders through `rangeInr`, which always prints two bounds. Do not "tidy" equal
-  bounds into one number.
+- Every rupee figure renders through `inr`. The horizon switch and the Advanced panel are the only
+  user-facing controls that change the math.
 - `/api/estimate` returns 413 above `MAX_BODY_BYTES` (8 KB) before parsing.
-- Open Cloudflare-side items owned by the founder: WAF rate-limiting rule on `POST /api/estimate`
-  (see README §14), zone Browser Cache TTL → Respect Existing Headers.
+- Cloudflare-side controls (deployed by the founder 2026-09-20, see README §14): WAF rate limit on
+  `POST /api/estimate` (3 req / 10 s per IP), zone Browser Cache TTL → Respect Existing Headers.
 
 ## When to stop and ask the founder
 
-- Changing any formula, threshold (9 months), or the conservative-interval rule.
+- Changing any formula, the horizon set (3/6/12), or the break-even rule.
 - Changing the run model, FX rate, working days, or any `data/*.json` number.
 - Adding a dependency, a build step, a second Function, or any storage.
 - Anything that sends user text anywhere other than Anthropic via `/api/estimate`.

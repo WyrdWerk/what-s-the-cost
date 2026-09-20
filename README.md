@@ -5,7 +5,8 @@ Describe one repetitive job in Hindi or English, answer three tap-questions, and
 "receipt" — styled like a bill — showing what an AI agent would cost to set up and run, what your
 oversight time is worth, when it breaks even against doing the job by hand, and a plain verdict.
 
-Every figure is a **rupee range, never a point estimate**. The footer says what it is:
+Every figure is a **single rupee number built from average assumptions**, projected over a period
+the owner picks (3 / 6 / 12 months) so the one-time setup is amortised honestly. The footer says what it is:
 *"Estimate, not a quote. Real price depends on the factors above."*
 
 - **Live:** https://agentcost.wyrdwerk.com (also https://what-s-the-cost.pages.dev)
@@ -59,15 +60,19 @@ A weak match is never dressed up as a confident verdict.
 
 | Line | What it is |
 |---|---|
-| Agent setup (one time) | Range in ₹ |
+| Agent setup (one time) | ₹, setup hours × setup rate |
 | Save as PDF / Save as image | Both are pure client-side, no model call, no dependency. **PDF** = `window.print()` + `@media print` stylesheet (hides header, buttons, tier switch, search; A4; one page; footer carries a clickable "reopen" link whose `href` is the full share URL). **Image** = the receipt is redrawn on a `<canvas>` (1080 px wide, `drawReceiptPng()` in `app.js`) from the same `receiptModel()` data as the DOM, then handed to the phone's share sheet (`navigator.share` with a PNG file) or downloaded. Devanagari is shaped by the browser's own text engine, so Hindi works without embedded fonts |
 | Which model runs the agent? | Switch **Cheap / Balanced / Frontier / Other…**. The three tiers are pinned TokenWatch models; **Other…** opens a search box with two price sources: **TokenWatch** (one `GET /api/v1/models?search=<text>&limit=10` per keystroke, first-party prices) or **OpenRouter** (public `GET https://openrouter.ai/api/v1/models`, no API key, ~450 rows fetched once per page load only after the user picks that source, filtered client-side, per-token prices converted to per-million once). Rows are labelled with their source because the same model can cost differently on OpenRouter than from its maker. Switching recomputes the receipt live; tier and any picked model are frozen into the share link |
 | Monthly run cost | Model usage on the selected tier's model |
 | Your oversight time | Hours/month **and** ₹/month, shown separately |
 | What this job costs you today | Baseline: hours/month × imputed wage |
-| Monthly saving | Conservative interval (see §4) |
-| Break-even | "Month a to b" / "Possible, not assured." / "No break-even at these numbers." |
-| **Verdict** | *Worth an agent* / *Assist first — try a simpler tool* / *Leave it alone* |
+| Monthly saving | Baseline − run − oversight, before the one-time setup (see §4) |
+| Project over | Switch **3 / 6 / 12 months** (default 3 = a quarter). Recomputes the block below live; frozen into the share link |
+| Cost today over N months | Baseline × N |
+| Cost with agent over N months | Setup + (run + oversight) × N; the sub-line shows that sum |
+| Net saving / loss over N months | The difference, bold |
+| Break-even | "Month k" (first month cumulative saving covers setup), with a sub-line when k is beyond the chosen period, or "Never at these numbers." |
+| **Verdict** | *Worth an agent — pays back within the period* / *Saves monthly, but pays back later — start small* / *Leave it alone* |
 | What moves the price | Three honest bullets per archetype |
 | When it is not worth it | One paragraph per archetype |
 | Assumptions | Working days, USD→INR rate, pricing snapshot date |
@@ -77,10 +82,12 @@ Buttons: *Start over* and *Copy share link*.
 
 ## 2. Design principles
 
-1. **Ranges, not points.** Every cost is an interval and interval arithmetic is conservative:
-   the "saving" range's low end assumes every cost at its high end and every benefit at its low end.
-2. **Verdicts on the interval, not the midpoint.** "Worth an agent" requires break-even ≤ 9 months
-   *even in the worst case*.
+1. **One number per line, from average assumptions.** The data files keep `[low, high]` pairs
+   for provenance; the engine uses each pair's midpoint. (Founder decision 2026-09-20: ranges were
+   confusing owners more than they were protecting them.) The Advanced panel on Step 2 lets the
+   owner replace any assumption with their own number.
+2. **Setup is amortised over a period the owner picks.** 3 / 6 / 12 months. The verdict answers
+   "does it pay for itself inside that period?", not an abstract threshold.
 3. **Baseline is time, not salary.** The job's current cost is the minutes it eats × an imputed
    wage — never a whole salary unless the whole job disappears.
 4. **Manual mode is the product, not the rescue feature.** Chips are visible immediately; the model
@@ -99,7 +106,7 @@ Buttons: *Start over* and *Copy share link*.
 │ index.html · style.css       │◀──────▶│ static assets from public/       │
 │ app.js   — UI, i18n, share   │        │                                  │
 │ engine.js — deterministic    │  POST  │ functions/api/estimate.js        │
-│             range math       │───────▶│  ONE Pages Function              │──▶ Anthropic Messages API
+│             point math       │───────▶│  ONE Pages Function              │──▶ Anthropic Messages API
 │ sw.js    — offline cache     │◀───────│  validates → strict JSON | null  │    claude-fable-5-1
 │ data/*.json — assumptions    │        │  ANTHROPIC_API_KEY (secret)      │    structured output
 └──────────────────────────────┘        └──────────────────────────────────┘
@@ -115,54 +122,60 @@ Buttons: *Start over* and *Copy share link*.
 
 ## 4. The math
 
-All formulas live in [`public/engine.js`](public/engine.js). Notation: `[lo, hi]` is a range; `D` is
-`working_days_per_month` (26, disclosed on the receipt).
+All formulas live in [`public/engine.js`](public/engine.js). Every input that the data files store
+as a `[lo, hi]` pair is reduced to its midpoint `mid(x) = (lo + hi) / 2` first; a bare number is used
+as-is (Advanced-panel overrides). `D` is `working_days_per_month` (26, disclosed on the receipt); `H`
+is the chosen horizon in months (3 default, 6, 12).
 
 **Setup (one time)**
-`S = [setup_hours.lo × setup_rate.lo, setup_hours.hi × setup_rate.hi]`
+`S = mid(setup_hours) × mid(setup_rate)`
 
 **Monthly run cost (model usage)** — input and output tokens priced separately; prices are USD
 **per million** tokens and are divided by 1e6 exactly once:
 
 ```
-per_step_inr(lo|hi) = (tokens_in/1e6 × price_in + tokens_out/1e6 × price_out) × usd_to_inr
-R = [tasks × D × steps.lo × per_step_inr(lo),  tasks × D × steps.hi × per_step_inr(hi)]
+per_step_inr = (mid(tokens_in)/1e6 × price_in + mid(tokens_out)/1e6 × price_out) × usd_to_inr
+R = tasks × D × mid(steps) × per_step_inr
 ```
 
 **Owner oversight**
 ```
 oversight_hours = review_min_per_day / 60 × D
-O = [oversight_hours × owner_rate.lo, oversight_hours × owner_rate.hi]
+O = oversight_hours × mid(owner_hourly_value)
 ```
 Shown as hours **and** rupees.
 
 **Baseline (what the job costs today)**
 ```
 baseline_hours = tasks × minutes / 60 × D
-wage = owner_hourly_value      if current_handling = "me"
-     = archetype staff wage    if current_handling = "staff"
-     = [0, 0]                  if current_handling = "nobody"   (no time is spent today)
-B = [baseline_hours × wage.lo, baseline_hours × wage.hi]
+wage = mid(owner_hourly_value)   if current_handling = "me"
+     = mid(archetype staff wage) if current_handling = "staff"
+     = 0                         if current_handling = "nobody"   (no time is spent today)
+B = baseline_hours × wage
 ```
 
-**Conservative net saving**
+**Monthly saving** (setup excluded — it is one-time)
+`Net = B − R − O`
+
+**Break-even month** — first month in which cumulative savings have covered the setup
+- `Net ≤ 0` → **never**
+- otherwise `k = max(1, ceil(S / Net))`
+
+**Horizon projection**
 ```
-Net.lo = B.lo − R.hi − O.hi
-Net.hi = B.hi − R.lo − O.lo
+cost_today      = B × H
+cost_with_agent = S + (R + O) × H
+saving          = cost_today − cost_with_agent      (negative = net loss over the period)
 ```
 
-**Break-even and payback**
-- `Net.hi ≤ 0` → **never**. No payback range is shown.
-- `Net.lo ≤ 0 < Net.hi` → **possible, not assured**. No payback range is shown.
-- `Net.lo > 0` → **assured**; `payback = [S.lo / Net.hi, S.hi / Net.lo]` months.
-
-**Verdict** (thresholds on the interval, never the midpoint)
-- assured **and** `payback.hi ≤ 9` → **Worth an agent**
+**Verdict**
 - never → **Leave it alone**
-- everything else (possible, or assured but slower than 9 months worst-case) → **Assist first**
+- `k ≤ H` → **Worth an agent** (pays back within the chosen period)
+- `k > H` → **Saves monthly, but pays back later** (assist first)
 
-Five hand-verified cases in [`test/engine.test.js`](test/engine.test.js) cover each verdict, the
-"possible" case, and a unit check that 1M input tokens at $1/M costs exactly $1.
+Hand-verified cases in [`test/engine.test.js`](test/engine.test.js) cover each verdict, the same
+inputs flipping from *assist first* at 3 months to *worth it* at 12, midpoint and bare-number
+inputs, and a unit check that 1M input tokens at $1/M costs exactly $1.
 
 ## 5. Data files (the founder's edit surface)
 
@@ -181,7 +194,7 @@ how trustworthy its numbers are.
 | `default_tier` | tier used until the user taps another | `balanced` |
 | `run_models.<tier>.id` / `display_name` | one pinned model per tier (`cheap`, `balanced`, `frontier`) | see below |
 | `run_models.<tier>.input_usd_per_million` / `output_usd_per_million` | USD per **million** tokens | see below |
-| *(engine contract)* | `Engine.estimate` throws `RangeError` for non-finite/negative/oversized inputs, unknown `current_handling`, or a missing priced model; input ranges are sorted before pairing; every output interval is asserted finite and ordered | — |
+| *(engine contract)* | `Engine.estimate` throws `RangeError` for non-finite/negative/oversized inputs, unknown `current_handling`, an unknown horizon, or a missing priced model; every rupee output is asserted finite | — |
 | `run_models.<tier>.intelligence_index` / `agentic_index` | TokenWatch benchmark indices, shown under the switch | see below |
 | `run_models.<tier>.pricing_snapshot_date` / `pricing_source` | shown on the receipt / the TokenWatch lookup used | 2026-09-20 |
 
@@ -200,7 +213,7 @@ Tiers pinned on 2026-09-20 from TokenWatch first-party provider rows:
 
 ### `archetypes.json` — the six job types
 
-One entry per archetype. All ranges are `[min, max]`.
+One entry per archetype. Pairs are `[min, max]`; the engine uses their midpoint.
 
 | Field | Meaning |
 |---|---|
@@ -265,7 +278,7 @@ Built and deployed in this order; each layer works without the ones after it.
 2. **Model classification** — layered on the same flow. Any failure is silent to the user.
 3. **Canned scenarios** — keyword match on the description when the model returns `null`; also the
    demo chips.
-4. **Service worker** — `public/sw.js` precaches the shell and data files (version string `VERSION` in `sw.js`, currently `ckh-v14`), cache-first
+4. **Service worker** — `public/sw.js` precaches the shell and data files (version string `VERSION` in `sw.js`, currently `ckh-v15`), cache-first
    for same-origin GETs, never caches `/api/*`. **Acceptance test passed:** a *new* estimate was
    completed with the network off (page from cache → typed description → API unreachable → keyword
    match → receipt).
@@ -282,7 +295,7 @@ a link therefore:
 - reproduces the same numbers even if `data/*.json` has since changed,
 - is Unicode-safe (UTF-8 → base64url) so Hindi survives,
 - is validated on decode: fragment ≤16 000 base64url chars (checked before `atob`), version, enums,
-  finite **non-negative ordered** ranges, all three tiers present, known keys only (frozen objects are
+  finite **non-negative** pairs or numbers, all three tiers present, known keys only (frozen objects are
   rebuilt field-by-field, so `__proto__`/unknown keys are dropped), string-length caps, and finally a
   dry run through `Engine.estimate`, which throws `RangeError` on anything out of contract. Anything
   malformed is ignored and the app starts fresh. Bounds do **not** authenticate a link: a shared
@@ -386,7 +399,7 @@ curl -s -X POST https://agentcost.wyrdwerk.com/api/estimate -H 'content-type: ap
 │   ├── index.html             # three screens, i18n hooks
 │   ├── style.css              # receipt-as-bill styling, 44px+ tap targets
 │   ├── app.js                 # UI state, i18n, chips/taps, receipt render, share link, SW registration
-│   ├── engine.js              # pure range math (UMD: browser global + Node require)
+│   ├── engine.js              # pure budget math + horizon projection (UMD: browser global + Node require)
 │   ├── sw.js                  # offline cache
 │   └── data/
 │       ├── archetypes.json    # six job types — founder's numbers
@@ -431,7 +444,7 @@ curl -s -X POST https://agentcost.wyrdwerk.com/api/estimate -H 'content-type: ap
   and can change it.
 - **`language` from the classifier is informational**; the UI language follows the toggle.
 - No PDF export, WhatsApp integration, or voice — deliberately out of scope.
-- The service worker version string (`ckh-v14` in `sw.js`) must be bumped when cached files change
+- The service worker version string (`ckh-v15` in `sw.js`) must be bumped when cached files change
   in ways that matter offline.
 
 ## 15. Decision log
@@ -455,3 +468,5 @@ curl -s -X POST https://agentcost.wyrdwerk.com/api/estimate -H 'content-type: ap
 | 2026-09-20 | Git-connected Pages over CLI deploy | No token needed; auto-deploy on push |
 | 2026-09-20 | UI title renamed "Cost Kitna Hoga?" → "What's the cost?"; TokenWatch link added to header | Founder instruction |
 | 2026-09-20 | Subdomain `agentcost.wyrdwerk.com` | Founder choice over `kitna`/`cost`/`estimate` |
+| 2026-09-20 | **Ranges → single numbers (midpoints) + 3/6/12-month horizon projection with amortised setup; break-even = month k; verdict = pays back within the chosen period.** Advanced panel on Step 2 to override setup hours/rate, owner hourly value, staff wage, review minutes | Founder: ranges were creating confusion; owners think in quarters. Data files keep pairs for provenance and older share links still decode |
+| 2026-09-20 | Setup hours 5–6 (content pipeline 8–10), setup rate ₹800–1,200/hr | Founder numbers replacing implementer drafts |

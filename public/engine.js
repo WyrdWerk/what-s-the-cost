@@ -1,5 +1,7 @@
-// What's the cost? — deterministic, range-preserving budget engine.
-// Pure functions only. No IO. Every output is a [low, high] pair in INR unless noted.
+// What's the cost? — deterministic budget engine with horizon projection.
+// Pure functions only. No IO. Every rupee output is a single number (INR) unless noted.
+// Data files still store [low, high] pairs (kept for provenance and so older share links decode);
+// the engine uses the midpoint of each pair. A plain number is accepted wherever a pair is.
 // Loaded both in the browser (window.Engine) and in Node tests (module.exports).
 
 (function (root, factory) {
@@ -7,11 +9,8 @@
   else root.Engine = factory();
 })(typeof self !== "undefined" ? self : this, function () {
   const MILLION = 1e6;
-  const WORTH_IT_MAX_MONTHS = 9;
-
-  function range(lo, hi) {
-    return [Math.min(lo, hi), Math.max(lo, hi)];
-  }
+  const HORIZONS = [3, 6, 12]; // months the receipt can project over; 3 = one quarter (default)
+  const DEFAULT_HORIZON = 3;
 
   // tokens_per_step prices are USD *per million tokens*. Divide by 1e6 exactly once, here.
   function tokenCostInrPerStep(tokens, model, usdToInr) {
@@ -20,11 +19,6 @@
     return (inUsd + outUsd) * usdToInr;
   }
 
-  /**
-   * @param {object} a   archetype entry from archetypes.json
-   * @param {object} cfg config.json
-   * @param {object} ans { tasks_per_day, minutes_per_task, current_handling: "me"|"staff"|"nobody", model_tier?: "cheap"|"balanced"|"frontier" }
-   */
   function resolveModel(cfg, tier) {
     const tiers = cfg.run_models || {};
     return tiers[tier] || tiers[cfg.default_tier] || cfg.run_model;
@@ -35,9 +29,11 @@
   const MAX_SCALAR = 1e9;
   const isNum = (x, max) => typeof x === "number" && Number.isFinite(x) && x >= 0 && x <= (max || MAX_SCALAR);
   function num(x, what, max) { if (!isNum(x, max)) throw new RangeError("engine: " + what + " must be a finite number in [0, " + (max || MAX_SCALAR) + "]"); return x; }
-  function rng(r, what, max) {
-    if (!Array.isArray(r) || r.length !== 2) throw new RangeError("engine: " + what + " must be a [low, high] pair");
-    return range(num(r[0], what + "[0]", max), num(r[1], what + "[1]", max));
+  // A [low, high] pair → its midpoint; a bare number passes through. Order of the pair does not matter.
+  function mid(r, what, max) {
+    if (typeof r === "number") return num(r, what, max);
+    if (!Array.isArray(r) || r.length !== 2) throw new RangeError("engine: " + what + " must be a number or a [low, high] pair");
+    return (num(r[0], what + "[0]", max) + num(r[1], what + "[1]", max)) / 2;
   }
   function pricedModel(m, what) {
     if (!m || typeof m !== "object") throw new RangeError("engine: " + what + " missing");
@@ -46,111 +42,83 @@
   }
   const HANDLING = ["me", "staff", "nobody"];
 
+  /**
+   * @param {object} a0   archetype entry from archetypes.json
+   * @param {object} cfg0 config.json
+   * @param {object} ans  { tasks_per_day, minutes_per_task, current_handling: "me"|"staff"|"nobody",
+   *                        model_tier?: "cheap"|"balanced"|"frontier"|"custom", horizon?: 3|6|12 }
+   */
   function estimate(a0, cfg0, ans) {
     if (!a0 || !cfg0 || !ans) throw new RangeError("engine: archetype, config and answers are required");
-    // Normalised copies: every interval sorted, every scalar finite and non-negative.
-    const a = {
-      ...a0,
-      setup_hours: rng(a0.setup_hours, "setup_hours", 1e5),
-      steps_per_task: rng(a0.steps_per_task, "steps_per_task", 1e4),
-      tokens_per_step: { input: rng(a0.tokens_per_step && a0.tokens_per_step.input, "tokens_per_step.input", 1e7),
-                         output: rng(a0.tokens_per_step && a0.tokens_per_step.output, "tokens_per_step.output", 1e7) },
-      review_min_per_day: num(a0.review_min_per_day, "review_min_per_day", 1440),
-      baseline_wage_assumption: { inr_per_hour: rng(a0.baseline_wage_assumption && a0.baseline_wage_assumption.inr_per_hour, "baseline_wage_assumption.inr_per_hour", 1e6) },
-    };
-    const cfg = {
-      ...cfg0,
-      working_days_per_month: num(cfg0.working_days_per_month, "working_days_per_month", 31),
-      usd_to_inr: num(cfg0.usd_to_inr, "usd_to_inr", 1e4),
-      owner_hourly_value_inr: rng(cfg0.owner_hourly_value_inr, "owner_hourly_value_inr", 1e6),
-      setup_hourly_rate_inr: rng(cfg0.setup_hourly_rate_inr, "setup_hourly_rate_inr", 1e6),
-    };
-    const days = cfg.working_days_per_month;
+    const setupHours = mid(a0.setup_hours, "setup_hours", 1e5);
+    const steps = mid(a0.steps_per_task, "steps_per_task", 1e4);
+    const tokensIn = mid(a0.tokens_per_step && a0.tokens_per_step.input, "tokens_per_step.input", 1e7);
+    const tokensOut = mid(a0.tokens_per_step && a0.tokens_per_step.output, "tokens_per_step.output", 1e7);
+    const reviewMin = num(a0.review_min_per_day, "review_min_per_day", 1440);
+    const staffWage = mid(a0.baseline_wage_assumption && a0.baseline_wage_assumption.inr_per_hour, "baseline_wage_assumption.inr_per_hour", 1e6);
+    const days = num(cfg0.working_days_per_month, "working_days_per_month", 31);
+    const usdToInr = num(cfg0.usd_to_inr, "usd_to_inr", 1e4);
+    const ownerValue = mid(cfg0.owner_hourly_value_inr, "owner_hourly_value_inr", 1e6);
+    const setupRate = mid(cfg0.setup_hourly_rate_inr, "setup_hourly_rate_inr", 1e6);
     const tasks = num(ans.tasks_per_day, "tasks_per_day", 1e4);
     const minutes = num(ans.minutes_per_task, "minutes_per_task", 1440);
     if (!HANDLING.includes(ans.current_handling)) throw new RangeError("engine: current_handling must be me|staff|nobody");
-    const model = pricedModel(resolveModel(cfg, ans.model_tier), "run model");
+    const horizon = ans.horizon == null ? DEFAULT_HORIZON : ans.horizon;
+    if (!HORIZONS.includes(horizon)) throw new RangeError("engine: horizon must be one of " + HORIZONS.join("|"));
+    const model = pricedModel(resolveModel(cfg0, ans.model_tier), "run model");
 
-    // Setup (one time) = hours × hourly rate, interval × interval.
-    const setup = range(
-      a.setup_hours[0] * cfg.setup_hourly_rate_inr[0],
-      a.setup_hours[1] * cfg.setup_hourly_rate_inr[1]
-    );
+    // Setup (one time) = hours × hourly rate.
+    const setup = setupHours * setupRate;
 
-    // Monthly run = tasks × days × steps × tokens × price, input/output kept separate.
-    const perStepLow = tokenCostInrPerStep(
-      { input: a.tokens_per_step.input[0], output: a.tokens_per_step.output[0] },
-      model, cfg.usd_to_inr
-    );
-    const perStepHigh = tokenCostInrPerStep(
-      { input: a.tokens_per_step.input[1], output: a.tokens_per_step.output[1] },
-      model, cfg.usd_to_inr
-    );
-    const run = range(
-      tasks * days * a.steps_per_task[0] * perStepLow,
-      tasks * days * a.steps_per_task[1] * perStepHigh
-    );
-    const tokensPerMonth = {
-      input: range(tasks * days * a.steps_per_task[0] * a.tokens_per_step.input[0],
-                   tasks * days * a.steps_per_task[1] * a.tokens_per_step.input[1]),
-      output: range(tasks * days * a.steps_per_task[0] * a.tokens_per_step.output[0],
-                    tasks * days * a.steps_per_task[1] * a.tokens_per_step.output[1]),
-    };
+    // Monthly run = tasks × days × steps × token cost per step.
+    const perStep = tokenCostInrPerStep({ input: tokensIn, output: tokensOut }, model, usdToInr);
+    const stepsPerMonth = tasks * days * steps;
+    const run = stepsPerMonth * perStep;
+    const tokensPerMonth = { input: stepsPerMonth * tokensIn, output: stepsPerMonth * tokensOut };
 
-    // Owner oversight: minutes/day → hours/month → rupees at owner's hourly value.
-    const oversightHours = (a.review_min_per_day / 60) * days;
-    const oversight = range(
-      oversightHours * cfg.owner_hourly_value_inr[0],
-      oversightHours * cfg.owner_hourly_value_inr[1]
-    );
+    // Owner oversight: minutes/day → hours/month → rupees at the owner's hourly value.
+    const oversightHours = (reviewMin / 60) * days;
+    const oversight = oversightHours * ownerValue;
 
     // Baseline = value of the time this task eats today, not a whole salary.
     // "nobody" does it today → no time is being spent, so baseline is zero (the job is currently undone).
-    const wage = ans.current_handling === "nobody"
-      ? [0, 0]
-      : ans.current_handling === "me"
-        ? cfg.owner_hourly_value_inr
-        : a.baseline_wage_assumption.inr_per_hour;
+    const wage = ans.current_handling === "nobody" ? 0 : ans.current_handling === "me" ? ownerValue : staffWage;
     const baselineHours = tasks * (minutes / 60) * days;
-    const baseline = range(baselineHours * wage[0], baselineHours * wage[1]);
+    const baseline = baselineHours * wage;
 
-    // Conservative interval arithmetic.
-    const netLow = baseline[0] - run[1] - oversight[1];
-    const netHigh = baseline[1] - run[0] - oversight[0];
+    // Monthly saving once the agent is running (setup excluded; it is one-time and amortised below).
+    const net = baseline - run - oversight;
 
-    let breakEven; // "never" | "possible" | "assured"
-    let payback = null; // [months_low, months_high] only when both net bounds > 0
-    if (netHigh <= 0) breakEven = "never";
-    else if (netLow <= 0) breakEven = "possible";
-    else {
-      breakEven = "assured";
-      payback = [setup[0] / netHigh, setup[1] / netLow];
-    }
+    // Break-even month = first month in which cumulative monthly savings have covered the one-time setup.
+    // net ≤ 0 → never. setup 0 with positive net → month 1.
+    const breakEvenMonth = net > 0 ? Math.max(1, Math.ceil(setup / net)) : null;
+    const breakEven = breakEvenMonth === null ? "never" : breakEvenMonth <= horizon ? "within" : "later";
 
-    let verdict; // "worth_it" | "assist_first" | "leave_it"
-    if (breakEven === "never") verdict = "leave_it";
-    else if (breakEven === "assured" && payback[1] <= WORTH_IT_MAX_MONTHS) verdict = "worth_it";
-    else verdict = "assist_first";
+    // Horizon projection: what the job costs today over the period vs. with the agent (setup + monthly × months).
+    const costToday = baseline * horizon;
+    const costWithAgent = setup + (run + oversight) * horizon;
+    const saving = costToday - costWithAgent;
 
-    // Output contract: every interval finite and ordered.
-    [setup, run, oversight, baseline, [netLow, netHigh], payback || [0, 0]].forEach((r) => {
-      if (!r.every(Number.isFinite) || r[0] > r[1]) throw new RangeError("engine: produced a non-finite or unordered range");
+    // "worth_it" = pays for itself inside the chosen horizon; "assist_first" = saves monthly but pays back later;
+    // "leave_it" = no monthly saving at these numbers.
+    const verdict = breakEven === "never" ? "leave_it" : breakEven === "within" ? "worth_it" : "assist_first";
+
+    // Output contract: every rupee figure finite.
+    [setup, run, oversight, baseline, net, costToday, costWithAgent, saving].forEach((x) => {
+      if (!Number.isFinite(x)) throw new RangeError("engine: produced a non-finite value");
     });
 
     return {
-      setup, run, oversight, oversightHours, baseline, baselineHours,
-      tokensPerMonth, net: [netLow, netHigh], breakEven, payback, verdict,
+      setup, run, oversight, oversightHours, baseline, baselineHours, tokensPerMonth, net,
+      horizon, costToday, costWithAgent, saving, breakEven, breakEvenMonth, verdict,
       assumptions: {
-        working_days_per_month: days,
-        usd_to_inr: cfg.usd_to_inr,
-        run_model: model,
-        model_tier: ans.model_tier || cfg.default_tier || null,
-        owner_hourly_value_inr: cfg.owner_hourly_value_inr,
-        setup_hourly_rate_inr: cfg.setup_hourly_rate_inr,
-        wage_used_inr_per_hour: wage,
+        working_days_per_month: days, usd_to_inr: usdToInr, run_model: model,
+        model_tier: ans.model_tier || cfg0.default_tier || null,
+        setup_hours: setupHours, steps_per_task: steps, tokens_per_step: { input: tokensIn, output: tokensOut },
+        owner_hourly_value_inr: ownerValue, setup_hourly_rate_inr: setupRate, wage_used_inr_per_hour: wage,
       },
     };
   }
 
-  return { estimate, resolveModel, WORTH_IT_MAX_MONTHS };
+  return { estimate, resolveModel, HORIZONS, DEFAULT_HORIZON };
 });
