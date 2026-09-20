@@ -406,7 +406,7 @@ curl -s -X POST https://agentcost.wyrdwerk.com/api/estimate -H 'content-type: ap
   and can change it.
 - **`language` from the classifier is informational**; the UI language follows the toggle.
 - No PDF export, WhatsApp integration, or voice — deliberately out of scope.
-- The service worker version string (`ckh-v4` in `sw.js`) must be bumped when cached files change
+- The service worker version string (`ckh-v5` in `sw.js`) must be bumped when cached files change
   in ways that matter offline.
 
 ## 15. Decision log
