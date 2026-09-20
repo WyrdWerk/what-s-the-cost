@@ -90,7 +90,7 @@ export async function onRequestPost(context) {
       headers: { "content-type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
       body: JSON.stringify({
         model: MODEL,
-        max_tokens: 4096, // hard cap on thinking + response; the JSON itself is ~40 tokens
+        max_tokens: 400, // classifier emits ~5 JSON fields (~60 tokens); low cap bounds worst-case spend per abusive request // hard cap on thinking + response; the JSON itself is ~40 tokens
         system: SYSTEM,
         messages: [{ role: "user", content: `UI language: ${language}\nDescription:\n${description}` }],
         output_config: { effort: "low", format: { type: "json_schema", schema: SCHEMA } },
