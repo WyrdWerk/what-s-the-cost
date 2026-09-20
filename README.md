@@ -398,19 +398,18 @@ curl -s -X POST https://agentcost.wyrdwerk.com/api/estimate -H 'content-type: ap
 
 ## 14. Known limitations and roadmap
 
-**Open security items (Cloudflare dashboard, founder-owned):**
+**Cloudflare dashboard controls (founder-owned, deployed 2026-09-20):**
 
-- **No rate limit on `POST /api/estimate`.** Each call spends Anthropic credit (worst case ≈ $0.20
-  at `max_tokens` 4096 on Fable 5.1). Fix: WAF → Rate limiting rules → hostname
-  `agentcost.wyrdwerk.com` AND path `/api/estimate` AND method `POST`, per-IP, e.g. 10 req / 1 min,
-  action Block ([Cloudflare best practices](https://developers.cloudflare.com/waf/rate-limiting-rules/best-practices/)).
-  Backstop: monthly spend limit in the Anthropic console. If abuse continues, add
+- **Rate limit on `POST /api/estimate`.** Zone WAF rate-limiting rule: URI Path equals
+  `/api/estimate`, per IP, 3 requests / 10 s, action Block for 10 s (Free-plan maxima: one rule,
+  Path field only, 10 s windows). Verified live: 8 rapid invalid POSTs → `400 400 400 429 429 429 429 429`.
+  Each allowed call spends at most ≈ $0.02 of Anthropic credit (`max_tokens` 400 on Fable 5.1).
+  If abuse continues despite this, add
   [Turnstile](https://developers.cloudflare.com/pages/functions/plugins/turnstile/) with
-  server-side validation before the paid fetch.
-- **Zone Browser Cache TTL (4 h) overrides `_headers` `max-age=0` on the custom domain.** Caching →
-  Configuration → Browser Cache TTL → *Respect Existing Headers*
-  ([docs](https://developers.cloudflare.com/cache/how-to/edge-browser-cache-ttl/)). Until then a
-  deploy can be stale for up to 4 h for returning visitors on `agentcost.wyrdwerk.com`.
+  server-side validation before the paid fetch. Backstop: monthly spend limit in the Anthropic console.
+- **Zone Browser Cache TTL set to *Respect Existing Headers*.** Previously a 4 h zone default
+  overrode `_headers` `max-age=0` on the custom domain. Verified live: all shell files on
+  `agentcost.wyrdwerk.com` now return `public, max-age=0, must-revalidate`, matching `pages.dev`.
 
 
 - **Numbers are drafts.** `archetypes.json` and the owner/setup rates in `config.json` are
