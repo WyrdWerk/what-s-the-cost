@@ -31,7 +31,9 @@
       tierLabel: "Which model runs the agent?", tierSub: "{model} · intelligence {iq} · ${pin}/{pout} per M tokens",
       tiers: { cheap: "Cheap", balanced: "Balanced", frontier: "Frontier", custom: "Other…" },
       searchPlaceholder: "Search TokenWatch: e.g. deepseek, gemini, llama", searchHint: "Prices from TokenWatch, USD per million tokens. Pick a row.",
-      searchNone: "No match. Try another name.", searchFail: "TokenWatch unreachable — use the three tiers.", customLive: "live TokenWatch price, {date}",
+      searchNone: "No match. Try another name.", searchFail: "{source} unreachable — use the three tiers.", customLive: "live {source} price, {date}",
+      sources: { tokenwatch: "TokenWatch", openrouter: "OpenRouter" }, sourceLabel: "Price source", orLoading: "Loading OpenRouter list (once)…",
+      orHint: "OpenRouter prices are what OpenRouter charges (may differ from the maker's own price). USD per million tokens.",
       aiThinking: "Reading your description…", aiFallback: "Couldn't read that automatically — tap the closest match below.",
     },
     hi: {
@@ -60,12 +62,18 @@
       tierLabel: "एजेंट कौन-सा मॉडल चलाएगा?", tierSub: "{model} · इंटेलिजेंस {iq} · ${pin}/{pout} प्रति M टोकन",
       tiers: { cheap: "सस्ता", balanced: "संतुलित", frontier: "सबसे तेज़", custom: "और…" },
       searchPlaceholder: "TokenWatch में खोजें: जैसे deepseek, gemini, llama", searchHint: "कीमतें TokenWatch से, USD प्रति मिलियन टोकन। एक चुनिए।",
-      searchNone: "कुछ नहीं मिला। दूसरा नाम आज़माएँ।", searchFail: "TokenWatch नहीं मिला — तीन टियर इस्तेमाल करें।", customLive: "TokenWatch लाइव कीमत, {date}",
+      searchNone: "कुछ नहीं मिला। दूसरा नाम आज़माएँ।", searchFail: "{source} नहीं मिला — तीन टियर इस्तेमाल करें।", customLive: "{source} लाइव कीमत, {date}",
+      sources: { tokenwatch: "TokenWatch", openrouter: "OpenRouter" }, sourceLabel: "कीमत का स्रोत", orLoading: "OpenRouter सूची लोड हो रही है (एक बार)…",
+      orHint: "OpenRouter की कीमत वह है जो OpenRouter लेता है (मूल कंपनी की कीमत से अलग हो सकती है)। USD प्रति मिलियन टोकन।",
       aiThinking: "आपका विवरण पढ़ रहे हैं…", aiFallback: "अपने आप समझ नहीं आया — नीचे सबसे नज़दीकी काम चुनिए।",
     },
   };
   const TIERS = ["cheap", "balanced", "frontier", "custom"];
   const TOKENWATCH_SEARCH = "https://tokenwatch.wyrdwerk.com/api/v1/models?limit=10&search=";
+  // OpenRouter catalog is public (no key), CORS *, ~450 rows. Fetched at most once per page load, only after the user picks the OpenRouter source.
+  const OPENROUTER_MODELS = "https://openrouter.ai/api/v1/models";
+  const SOURCES = ["tokenwatch", "openrouter"];
+  let openrouterCatalog = null; // Promise<Array<normalised row>> once requested
   const TAPS = {
     tasks_per_day: [1, 5, 10, 20, 50, 100],
     minutes_per_task: [2, 5, 10, 20, 30],
@@ -84,8 +92,9 @@
     source: "manual", // "manual" | "ai" | "shared"
     answers: { tasks_per_day: null, current_handling: null, minutes_per_task: null },
     model_tier: null, // "cheap" | "balanced" | "frontier" | "custom"; null → config.default_tier
-    custom_model: null, // priced model object picked from TokenWatch search (tier "custom")
+    custom_model: null, // priced model object picked from TokenWatch/OpenRouter search (tier "custom")
     searchOpen: false,
+    searchSource: "tokenwatch", // "tokenwatch" | "openrouter" (UI-only, not part of the share link)
     frozen: null, // { archetype, config } snapshot embedded in share links
   };
   let DATA = { archetypes: [], config: null };
@@ -235,16 +244,46 @@
     const m = Engine.resolveModel(cfg, tier);
     const sub = document.createElement("small");
     sub.textContent = fmt(s.tierSub, { model: m.display_name || m.id, iq: m.intelligence_index ?? "—", pin: m.input_usd_per_million, pout: m.output_usd_per_million })
-      + (tier === "custom" ? " · " + fmt(s.customLive, { date: m.pricing_snapshot_date }) : "");
+      + (tier === "custom" ? " · " + fmt(s.customLive, { date: m.pricing_snapshot_date, source: s.sources[m.pricing_source] || s.sources.tokenwatch }) : "");
     wrap.appendChild(sub); return wrap;
   }
 
-  // "Other…" — one small TokenWatch search (limit 10, never the catalog). Picked row is frozen into state + share link.
+  // "Other…" — pick a model from one of two live price sources. Never fetched at receipt render; only after the user opens this panel.
+  //  • TokenWatch: one small search per keystroke (limit 10, first-party prices).
+  //  • OpenRouter: public catalog (~450 rows, no key) fetched ONCE per page load when the source is chosen, then filtered client-side.
+  // Picked row is normalised to the same priced-model shape and frozen into state + share link.
+  function loadOpenRouter() {
+    if (!openrouterCatalog) {
+      openrouterCatalog = fetch(OPENROUTER_MODELS, { signal: AbortSignal.timeout(10000) })
+        .then((r) => { if (!r.ok) throw new Error(String(r.status)); return r.json(); })
+        .then((j) => (Array.isArray(j.data) ? j.data : []).map((m) => {
+          // OpenRouter prices are USD PER TOKEN as strings; convert to USD per million once, here.
+          const pin = Number(m?.pricing?.prompt) * 1e6, pout = Number(m?.pricing?.completion) * 1e6;
+          return { id: m.id, name: m.name, provider: "openrouter", provider_display: "OpenRouter",
+            pricing: { input: Math.round(pin * 1000) / 1000, output: Math.round(pout * 1000) / 1000 }, benchmarks: null };
+        }))
+        .catch((e) => { openrouterCatalog = null; throw e; }); // allow a retry on the next keystroke
+    }
+    return openrouterCatalog;
+  }
+  const norm = (x) => String(x || "").toLowerCase();
+
   function searchPanel(s) {
     const box = document.createElement("div"); box.className = "twsearch";
-    const inp = document.createElement("input"); inp.type = "search"; inp.id = "twSearch"; inp.placeholder = s.searchPlaceholder; inp.autocomplete = "off";
-    const hint = document.createElement("small"); hint.textContent = s.searchHint;
+    const srcRow = document.createElement("div"); srcRow.className = "seg src"; srcRow.setAttribute("role", "radiogroup"); srcRow.setAttribute("aria-label", s.sourceLabel);
+    SOURCES.forEach((k) => {
+      const b = document.createElement("button"); b.type = "button"; b.textContent = s.sources[k]; b.setAttribute("role", "radio"); b.dataset.src = k;
+      setChecked(b, state.searchSource === k);
+      b.onclick = () => { state.searchSource = k; renderReceipt(); $("#twSearch")?.focus(); };
+      srcRow.appendChild(b);
+    });
+    radioKeys(srcRow);
+    const src = state.searchSource;
+    const inp = document.createElement("input"); inp.type = "search"; inp.id = "twSearch"; inp.autocomplete = "off";
+    inp.placeholder = s.searchPlaceholder.replace("TokenWatch", s.sources[src]);
+    const hint = document.createElement("small"); hint.textContent = src === "openrouter" ? s.orHint : s.searchHint;
     const list = document.createElement("div"); list.className = "twlist";
+    const note = (txt) => { list.replaceChildren(); const e = document.createElement("small"); e.textContent = txt; list.appendChild(e); };
     let timer = null, seq = 0;
     inp.oninput = () => {
       clearTimeout(timer);
@@ -253,19 +292,29 @@
       timer = setTimeout(async () => {
         const my = ++seq;
         try {
-          const r = await fetch(TOKENWATCH_SEARCH + encodeURIComponent(q), { signal: AbortSignal.timeout(6000) });
-          if (!r.ok) throw new Error(String(r.status));
-          const j = await r.json();
-          if (my !== seq) return;
-          renderRows(Array.isArray(j.models) ? j.models : []);
-        } catch { if (my === seq) { list.replaceChildren(); const e = document.createElement("small"); e.textContent = s.searchFail; list.appendChild(e); } }
+          let rows;
+          if (src === "openrouter") {
+            if (!openrouterCatalog) note(s.orLoading);
+            const all = await loadOpenRouter();
+            if (my !== seq) return;
+            const nq = norm(q);
+            rows = all.filter((m) => norm(m.id).includes(nq) || norm(m.name).includes(nq)).slice(0, 10);
+          } else {
+            const r = await fetch(TOKENWATCH_SEARCH + encodeURIComponent(q), { signal: AbortSignal.timeout(6000) });
+            if (!r.ok) throw new Error(String(r.status));
+            const j = await r.json();
+            if (my !== seq) return;
+            rows = Array.isArray(j.models) ? j.models : [];
+          }
+          renderRows(rows);
+        } catch { if (my === seq) note(fmt(s.searchFail, { source: s.sources[src] })); }
       }, 300);
     };
     function renderRows(rows) {
       list.replaceChildren();
       const usable = rows.filter((m) => m && typeof m.id === "string" && !/:batch$/.test(m.id) && m.pricing
-        && Number.isFinite(m.pricing.input) && Number.isFinite(m.pricing.output));
-      if (!usable.length) { const e = document.createElement("small"); e.textContent = s.searchNone; list.appendChild(e); return; }
+        && Number.isFinite(m.pricing.input) && Number.isFinite(m.pricing.output) && m.pricing.input >= 0 && m.pricing.output >= 0);
+      if (!usable.length) { note(s.searchNone); return; }
       usable.forEach((m) => {
         const b = document.createElement("button"); b.type = "button"; b.className = "twrow";
         const name = document.createElement("span"); name.textContent = String(m.name || m.id).slice(0, 60) + " · " + String(m.provider_display || m.provider || "").slice(0, 24);
@@ -277,14 +326,14 @@
             id: String(m.id).slice(0, 80), display_name: String(m.name || m.id).slice(0, 60), provider: String(m.provider || "").slice(0, 40),
             input_usd_per_million: m.pricing.input, output_usd_per_million: m.pricing.output,
             intelligence_index: Number.isFinite(m.benchmarks?.intelligence_index) ? m.benchmarks.intelligence_index : null,
-            pricing_snapshot_date: new Date().toISOString().slice(0, 10), pricing_source: "TokenWatch search (live)",
+            pricing_snapshot_date: new Date().toISOString().slice(0, 10), pricing_source: src,
           };
           state.model_tier = "custom"; state.searchOpen = false; renderReceipt(); location.hash = encodeState();
         };
         list.appendChild(b);
       });
     }
-    box.append(inp, hint, list); return box;
+    box.append(srcRow, inp, hint, list); return box;
   }
 
   function renderReceipt() {
@@ -387,7 +436,8 @@
         p.custom_model = { id: cm.id.slice(0, 80), display_name: String(cm.display_name || cm.id).slice(0, 60), provider: String(cm.provider || "").slice(0, 40),
           input_usd_per_million: cm.input_usd_per_million, output_usd_per_million: cm.output_usd_per_million,
           intelligence_index: Number.isFinite(cm.intelligence_index) ? cm.intelligence_index : null,
-          pricing_snapshot_date: String(cm.pricing_snapshot_date || "").slice(0, 10), pricing_source: "TokenWatch search (shared)" };
+          pricing_snapshot_date: String(cm.pricing_snapshot_date || "").slice(0, 10),
+          pricing_source: SOURCES.includes(cm.pricing_source) ? cm.pricing_source : "tokenwatch" };
       } else p.custom_model = null;
       fa.name_en = String(fa.name_en || ""); fa.name_hi = String(fa.name_hi || "");
       fa.price_drivers = Array.isArray(fa.price_drivers) ? fa.price_drivers.slice(0, 3).map(String) : [];

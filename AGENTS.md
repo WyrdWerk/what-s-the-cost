@@ -48,7 +48,7 @@ Repo: https://github.com/WyrdWerk/what-s-the-cost (public — no secrets, no cli
 | `public/index.html` | three screens, `data-i18n` hooks | adding a UI element (add its string to both `STR.en` and `STR.hi`) |
 | `public/style.css` | receipt-as-bill look, ≥44 px tap targets | styling |
 | `public/sw.js` | offline precache list and strategy | adding a static file the app needs offline (add to `SHELL`, bump `VERSION`) |
-| `public/data/config.json` | constants, three pinned model tiers (the "Other…" search in `app.js` is the only live TokenWatch call: `?search=&limit=10`, never the catalog) (`run_models`, `default_tier`), FX | founder tunes numbers; tier prices come from TokenWatch, USD per million |
+| `public/data/config.json` | constants, three pinned model tiers (the "Other…" search in `app.js` makes the only live price calls: TokenWatch `?search=&limit=10`, or the public OpenRouter `/api/v1/models` catalog fetched once on explicit source pick) (`run_models`, `default_tier`), FX | founder tunes numbers; tier prices come from TokenWatch, USD per million |
 | `public/data/archetypes.json` | six job types | founder tunes numbers; adding an id also requires the enum in `estimate.js` |
 | `public/data/scenarios.json` | five demo presets + keyword fallback | changing demos |
 | `functions/api/estimate.js` | classifier Function | prompt, schema, validation, timeout |
@@ -113,6 +113,9 @@ Repo: https://github.com/WyrdWerk/what-s-the-cost (public — no secrets, no cli
 - TokenWatch (tokenwatch.wyrdwerk.com) is WyrdWerk's own pricing comparator and the source of the
   pinned model price. Fixed lookup: `/api/v1/models/<canonical-id>/providers`. Never fetch the
   full catalog at receipt time.
+- OpenRouter is a second, optional price source in "Other…". Its `/api/v1/models` is public (no
+  key) and prices are USD per **token** — convert ×1e6 once (`loadOpenRouter()`). Any new fetch
+  origin must be added to `connect-src` in `public/_headers` and the SW `VERSION` bumped.
 
 ## When to stop and ask the founder
 

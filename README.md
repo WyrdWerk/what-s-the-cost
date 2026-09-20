@@ -60,7 +60,7 @@ A weak match is never dressed up as a confident verdict.
 | Line | What it is |
 |---|---|
 | Agent setup (one time) | Range in ₹ |
-| Which model runs the agent? | Switch **Cheap / Balanced / Frontier / Other…**. The three tiers are pinned TokenWatch models; **Other…** opens a search box that does one `GET /api/v1/models?search=<text>&limit=10` against TokenWatch (live price, dated), never the full catalog. Switching recomputes the receipt live; tier and any picked model are frozen into the share link |
+| Which model runs the agent? | Switch **Cheap / Balanced / Frontier / Other…**. The three tiers are pinned TokenWatch models; **Other…** opens a search box with two price sources: **TokenWatch** (one `GET /api/v1/models?search=<text>&limit=10` per keystroke, first-party prices) or **OpenRouter** (public `GET https://openrouter.ai/api/v1/models`, no API key, ~450 rows fetched once per page load only after the user picks that source, filtered client-side, per-token prices converted to per-million once). Rows are labelled with their source because the same model can cost differently on OpenRouter than from its maker. Switching recomputes the receipt live; tier and any picked model are frozen into the share link |
 | Monthly run cost | Model usage on the selected tier's model |
 | Your oversight time | Hours/month **and** ₹/month, shown separately |
 | What this job costs you today | Baseline: hours/month × imputed wage |
@@ -401,12 +401,16 @@ curl -s -X POST https://agentcost.wyrdwerk.com/api/estimate -H 'content-type: ap
   offline fallback. If the tiers are ever refreshed live, use the fixed per-model lookup
   `GET https://tokenwatch.wyrdwerk.com/api/v1/models/<id>/providers` for the three ids only.
 - **No bring-your-own API key, deliberately.** A key is needed to *run* a model, not to *price* it;
-  TokenWatch prices are public. A key in the browser would contradict the privacy footer.
+  TokenWatch and OpenRouter (`/api/v1/models`, verified 200 without a key, CORS `*`) prices are
+  public. A key in the browser would contradict the privacy footer.
+- **OpenRouter unit trap.** OpenRouter returns `pricing.prompt`/`completion` as USD **per token**
+  strings (`"0.00000075"` = $0.75/M). `loadOpenRouter()` in `app.js` multiplies by 1e6 exactly once.
+  Free models ($0) are kept and shown as `$0/0`.
 - **Model-inferred counts snap to the tap grid**; a user who says "30 a day" sees 20 preselected
   and can change it.
 - **`language` from the classifier is informational**; the UI language follows the toggle.
 - No PDF export, WhatsApp integration, or voice — deliberately out of scope.
-- The service worker version string (`ckh-v5` in `sw.js`) must be bumped when cached files change
+- The service worker version string (`ckh-v6` in `sw.js`) must be bumped when cached files change
   in ways that matter offline.
 
 ## 15. Decision log
@@ -417,6 +421,7 @@ curl -s -X POST https://agentcost.wyrdwerk.com/api/estimate -H 'content-type: ap
 | 2026-09-20 | Run model pinned to `claude-fable-5.1` from TokenWatch | Founder instruction; "modify later" |
 | 2026-09-20 | `_headers`: CSP + JS `max-age=0`; single-choice groups use ARIA radiogroup/radio with arrow keys; 44 px targets everywhere | Measured 4 h JS cache on prod; APG radio pattern; WCAG 2.5.5 |
 | 2026-09-20 | "Other…" model search via TokenWatch (`?search=&limit=10`), no BYO API key | Founder asked for wider choice; pricing needs no key |
+| 2026-09-20 | OpenRouter added as a second "Other…" source, still no key field | Founder proposed a client-side OpenRouter key + picker; `/api/v1/models` is public so the key adds only privacy risk. Catalog (~739 KB) loads once, only on explicit source pick — accepted exception to "never fetch the catalog", flagged to founder |
 | 2026-09-20 | Superseded: three model tiers (Gemini 3.8 Flash / Sonnet 5 / Fable 5.1) chosen on the receipt, default `balanced` | Founder chose "fixed tiers" over benchmark-suggested model; ~130× price spread made a single pinned model misleading |
 | 2026-09-20 | FX pinned ₹96/$ | frankfurter 95.88 (09-18), er-api 95.94 (09-20), rounded |
 | 2026-09-20 | `current_handling = "nobody"` ⇒ baseline ₹0 | No time is currently spent; agent cannot "save" it |

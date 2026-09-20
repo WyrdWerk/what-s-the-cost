@@ -72,3 +72,5 @@ button[disabled] { opacity: 0.5; cursor: not-allowed; }
 .receipt .twlist { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; }
 .receipt .twrow { display: flex; justify-content: space-between; gap: 8px; text-align: left; width: 100%; padding: 8px 10px; font: inherit; font-size: 0.9rem; background: none; border: 1px solid var(--line); border-radius: 8px; cursor: pointer; min-height: 44px; }
 .receipt .twrow .price { white-space: nowrap; color: var(--muted); }
+.receipt .twsearch .seg.src { margin-bottom: 6px; }
+.receipt .twsearch .seg.src button { font-size: 0.85rem; padding: 6px 12px; min-height: 36px; }
