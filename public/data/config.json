@@ -1,0 +1,14 @@
+{
+  "_status": "PLACEHOLDER — founder supplies these constants. All are disclosed on the receipt.",
+  "working_days_per_month": 26,
+  "owner_hourly_value_inr": [0, 0],
+  "setup_hourly_rate_inr": [0, 0],
+  "usd_to_inr": 0,
+  "run_model": {
+    "id": "",
+    "display_name": "",
+    "input_usd_per_million": 0,
+    "output_usd_per_million": 0,
+    "pricing_snapshot_date": ""
+  }
+}

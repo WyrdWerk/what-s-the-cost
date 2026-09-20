@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cost Kitna Hoga? — AI agent cost estimate for your business</title>
+  <meta name="description" content="Honest rupee ranges for what an AI agent would cost your MSME to set up and run. Estimate, not a quote.">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header class="top">
+    <h1 data-i18n="title">Cost Kitna Hoga?</h1>
+    <button id="langToggle" class="lang" type="button" aria-label="Switch language">हिन्दी</button>
+  </header>
+
+  <main id="app">
+    <!-- Screen 1: describe -->
+    <section id="screen-describe" class="screen">
+      <p class="lead" data-i18n="lead">Describe one repetitive job in your business. Hindi or English.</p>
+      <textarea id="description" rows="4" data-i18n-placeholder="descPlaceholder"
+        placeholder="e.g. Every day I send 20 quotations on WhatsApp and then chase replies"></textarea>
+      <p class="hint" data-i18n="chipsHint">Or tap the closest match:</p>
+      <div id="chips" class="chips" role="list"></div>
+      <button id="toQuestions" class="primary" type="button" data-i18n="next">Next →</button>
+      <p id="aiStatus" class="status" aria-live="polite"></p>
+    </section>
+
+    <!-- Screen 2: three tap-questions -->
+    <section id="screen-questions" class="screen hidden">
+      <p id="matchLabel" class="match"></p>
+      <fieldset>
+        <legend data-i18n="qVolume">How many times a day?</legend>
+        <div class="taps" data-q="tasks_per_day"></div>
+      </fieldset>
+      <fieldset>
+        <legend data-i18n="qWho">Who does it now?</legend>
+        <div class="taps" data-q="current_handling"></div>
+      </fieldset>
+      <fieldset>
+        <legend data-i18n="qMinutes">Minutes per task?</legend>
+        <div class="taps" data-q="minutes_per_task"></div>
+      </fieldset>
+      <div class="row">
+        <button id="backToDescribe" class="ghost" type="button" data-i18n="back">← Back</button>
+        <button id="toReceipt" class="primary" type="button" data-i18n="showReceipt">Show receipt</button>
+      </div>
+    </section>
+
+    <!-- Screen 3: receipt -->
+    <section id="screen-receipt" class="screen hidden">
+      <article id="receipt" class="receipt"></article>
+      <div class="row">
+        <button id="startOver" class="ghost" type="button" data-i18n="startOver">Start over</button>
+        <button id="copyLink" class="primary" type="button" data-i18n="copyLink">Copy share link</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="/engine.js"></script>
+  <script src="/app.js"></script>
+</body>
+</html>

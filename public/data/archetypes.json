@@ -1,0 +1,83 @@
+{
+  "_status": "PLACEHOLDER — every number below is a stand-in so the skeleton renders. Founder-supplied values replace them before any estimate is shown to a real user.",
+  "archetypes": [
+    {
+      "id": "quotation_followup",
+      "name_en": "Quotation follow-up (WhatsApp)",
+      "name_hi": "कोटेशन फॉलो-अप (WhatsApp)",
+      "does": "Chases sent quotations on WhatsApp, logs replies, flags hot leads.",
+      "setup_hours": [0, 0],
+      "steps_per_task": [0, 0],
+      "tokens_per_step": { "input": [0, 0], "output": [0, 0] },
+      "review_min_per_day": 0,
+      "baseline_wage_assumption": { "inr_per_hour": [0, 0], "note": "" },
+      "price_drivers": ["", "", ""],
+      "when_not_worth_it": ""
+    },
+    {
+      "id": "invoice_po_entry",
+      "name_en": "Invoice / PO entry",
+      "name_hi": "इनवॉइस / PO एंट्री",
+      "does": "Reads incoming invoices or purchase orders and enters them into your system.",
+      "setup_hours": [0, 0],
+      "steps_per_task": [0, 0],
+      "tokens_per_step": { "input": [0, 0], "output": [0, 0] },
+      "review_min_per_day": 0,
+      "baseline_wage_assumption": { "inr_per_hour": [0, 0], "note": "" },
+      "price_drivers": ["", "", ""],
+      "when_not_worth_it": ""
+    },
+    {
+      "id": "billing_inventory",
+      "name_en": "Billing + inventory",
+      "name_hi": "बिलिंग + इन्वेंटरी",
+      "does": "Creates bills and updates stock counts from sales.",
+      "setup_hours": [0, 0],
+      "steps_per_task": [0, 0],
+      "tokens_per_step": { "input": [0, 0], "output": [0, 0] },
+      "review_min_per_day": 0,
+      "baseline_wage_assumption": { "inr_per_hour": [0, 0], "note": "" },
+      "price_drivers": ["", "", ""],
+      "when_not_worth_it": ""
+    },
+    {
+      "id": "catalog_support",
+      "name_en": "Catalog support",
+      "name_hi": "कैटलॉग सपोर्ट",
+      "does": "Answers customer questions about products, prices and availability.",
+      "setup_hours": [0, 0],
+      "steps_per_task": [0, 0],
+      "tokens_per_step": { "input": [0, 0], "output": [0, 0] },
+      "review_min_per_day": 0,
+      "baseline_wage_assumption": { "inr_per_hour": [0, 0], "note": "" },
+      "price_drivers": ["", "", ""],
+      "when_not_worth_it": ""
+    },
+    {
+      "id": "report_generation",
+      "name_en": "Report generation",
+      "name_hi": "रिपोर्ट बनाना",
+      "does": "Compiles daily/weekly summaries from your sales, stock or ledger data.",
+      "setup_hours": [0, 0],
+      "steps_per_task": [0, 0],
+      "tokens_per_step": { "input": [0, 0], "output": [0, 0] },
+      "review_min_per_day": 0,
+      "baseline_wage_assumption": { "inr_per_hour": [0, 0], "note": "" },
+      "price_drivers": ["", "", ""],
+      "when_not_worth_it": ""
+    },
+    {
+      "id": "content_pipeline",
+      "name_en": "Content pipeline",
+      "name_hi": "कंटेंट पाइपलाइन",
+      "does": "Drafts product posts, captions and descriptions for review before posting.",
+      "setup_hours": [0, 0],
+      "steps_per_task": [0, 0],
+      "tokens_per_step": { "input": [0, 0], "output": [0, 0] },
+      "review_min_per_day": 0,
+      "baseline_wage_assumption": { "inr_per_hour": [0, 0], "note": "" },
+      "price_drivers": ["", "", ""],
+      "when_not_worth_it": ""
+    }
+  ]
+}
