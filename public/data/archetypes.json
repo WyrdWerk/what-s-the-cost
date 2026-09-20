@@ -7,8 +7,8 @@
       "name_hi": "कोटेशन फॉलो-अप (WhatsApp)",
       "does": "Reads each sent quotation, drafts a polite follow-up on WhatsApp, logs the reply and flags hot leads for you.",
       "setup_hours": [
-        12,
-        30
+        5,
+        6
       ],
       "steps_per_task": [
         3,
@@ -51,8 +51,8 @@
       "name_hi": "इनवॉइस / PO एंट्री",
       "does": "Reads incoming invoices or purchase orders (PDF, photo, email) and enters line items into your accounting or ERP.",
       "setup_hours": [
-        16,
-        40
+        5,
+        6
       ],
       "steps_per_task": [
         2,
@@ -95,8 +95,8 @@
       "name_hi": "बिलिंग + इन्वेंटरी",
       "does": "Creates bills from orders and updates stock counts, flagging low stock and mismatches.",
       "setup_hours": [
-        30,
-        80
+        5,
+        6
       ],
       "steps_per_task": [
         3,
@@ -139,8 +139,8 @@
       "name_hi": "कैटलॉग सपोर्ट",
       "does": "Answers customer questions about products, prices, sizes and availability from your catalog, and hands off to you when unsure.",
       "setup_hours": [
-        16,
-        40
+        5,
+        6
       ],
       "steps_per_task": [
         2,
@@ -183,8 +183,8 @@
       "name_hi": "रिपोर्ट बनाना",
       "does": "Pulls your daily or weekly sales, stock or ledger data and writes a short summary with the numbers that changed.",
       "setup_hours": [
-        10,
-        25
+        5,
+        6
       ],
       "steps_per_task": [
         2,
@@ -228,7 +228,7 @@
       "does": "Drafts product posts, captions and descriptions from your photos and notes, queued for your approval before posting.",
       "setup_hours": [
         8,
-        20
+        10
       ],
       "steps_per_task": [
         2,

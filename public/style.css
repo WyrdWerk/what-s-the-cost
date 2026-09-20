@@ -87,3 +87,10 @@ button[disabled] { opacity: 0.5; cursor: not-allowed; }
   .print-only a { text-decoration: underline; }
   a { color: inherit; text-decoration: none; }
 }
+.advanced { margin: 18px 0 0; border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+.advanced summary { cursor: pointer; font-weight: 600; min-height: 44px; display: flex; align-items: center; }
+.advanced .hint { margin: 6px 0 10px; font-size: 0.9rem; }
+.advrow { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 8px 0; flex-wrap: wrap; }
+.advrow label { flex: 1 1 160px; }
+.advinputs { display: flex; align-items: center; gap: 6px; }
+.advinputs input { width: 92px; min-height: 44px; padding: 8px 10px; font: inherit; border: 1px solid var(--line); border-radius: 8px; box-sizing: border-box; }

@@ -54,6 +54,11 @@
         <legend id="lgMinutes" data-i18n="qMinutes">Minutes per task?</legend>
         <div class="taps" data-q="minutes_per_task" role="radiogroup" aria-labelledby="lgMinutes"></div>
       </fieldset>
+      <details id="advanced" class="advanced">
+        <summary data-i18n="advSummary">Advanced: edit the assumptions</summary>
+        <p class="hint" data-i18n="advHint">Ranges, low – high. Leave a field blank to keep the default shown.</p>
+        <div id="advFields"></div>
+      </details>
       <div class="row">
         <button id="backToDescribe" class="ghost" type="button" data-i18n="back">← Back</button>
         <button id="toReceipt" class="primary" type="button" data-i18n="showReceipt">Show receipt</button>

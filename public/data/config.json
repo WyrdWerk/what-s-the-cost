@@ -1,8 +1,8 @@
 {
-  "_status": "DRAFT constants. run_models tiers pinned from TokenWatch on 2026-09-20 (first-party provider rows, USD per million tokens); owner/setup hourly values are implementer drafts awaiting founder review. All values are disclosed on the receipt.",
+  "_status": "DRAFT constants. run_models tiers pinned from TokenWatch on 2026-09-20 (first-party provider rows, USD per million tokens); setup_hourly_rate_inr and setup_hours set by founder 2026-09-20; owner_hourly_value_inr and staff wages remain implementer drafts. All values are disclosed on the receipt.",
   "working_days_per_month": 26,
   "owner_hourly_value_inr": [500, 1000],
-  "setup_hourly_rate_inr": [1200, 2500],
+  "setup_hourly_rate_inr": [800, 1200],
   "usd_to_inr": 96,
   "usd_to_inr_source": "frankfurter.dev 2026-09-18 (95.88) / open.er-api.com 2026-09-20 (95.94), rounded",
   "default_tier": "balanced",
