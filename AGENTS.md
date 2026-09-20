@@ -53,6 +53,7 @@ Repo: https://github.com/WyrdWerk/what-s-the-cost (public — no secrets, no cli
 | `public/data/scenarios.json` | five demo presets + keyword fallback | changing demos |
 | `functions/api/estimate.js` | classifier Function | prompt, schema, validation, timeout |
 | `test/engine.test.js` | hand-verified engine cases | any math change |
+| `public/_headers` | static-asset response headers (CSP, frame-ancestors, cache) | adding an external origin the client fetches (update `connect-src`) |
 | `wrangler.jsonc` | `pages_build_output_dir` | almost never |
 
 ## Invariants that are easy to break

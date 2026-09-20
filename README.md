@@ -406,7 +406,7 @@ curl -s -X POST https://agentcost.wyrdwerk.com/api/estimate -H 'content-type: ap
   and can change it.
 - **`language` from the classifier is informational**; the UI language follows the toggle.
 - No PDF export, WhatsApp integration, or voice — deliberately out of scope.
-- The service worker version string (`ckh-v3` in `sw.js`) must be bumped when cached files change
+- The service worker version string (`ckh-v4` in `sw.js`) must be bumped when cached files change
   in ways that matter offline.
 
 ## 15. Decision log
@@ -415,6 +415,7 @@ curl -s -X POST https://agentcost.wyrdwerk.com/api/estimate -H 'content-type: ap
 |---|---|---|
 | 2026-09-20 | Cloudflare Pages + one Function, vanilla JS, no build | Hackathon speed; zero-dependency deploy |
 | 2026-09-20 | Run model pinned to `claude-fable-5.1` from TokenWatch | Founder instruction; "modify later" |
+| 2026-09-20 | `_headers`: CSP + JS `max-age=0`; single-choice groups use ARIA radiogroup/radio with arrow keys; 44 px targets everywhere | Measured 4 h JS cache on prod; APG radio pattern; WCAG 2.5.5 |
 | 2026-09-20 | "Other…" model search via TokenWatch (`?search=&limit=10`), no BYO API key | Founder asked for wider choice; pricing needs no key |
 | 2026-09-20 | Superseded: three model tiers (Gemini 3.8 Flash / Sonnet 5 / Fable 5.1) chosen on the receipt, default `balanced` | Founder chose "fixed tiers" over benchmark-suggested model; ~130× price spread made a single pinned model misleading |
 | 2026-09-20 | FX pinned ₹96/$ | frankfurter 95.88 (09-18), er-api 95.94 (09-20), rounded |

@@ -110,7 +110,7 @@
     document.documentElement.lang = state.language;
     document.querySelectorAll("[data-i18n]").forEach((el) => { el.textContent = t()[el.dataset.i18n]; });
     document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => { el.placeholder = t()[el.dataset.i18nPlaceholder]; });
-    document.querySelectorAll(".lang button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.lang === state.language)));
+    document.querySelectorAll(".lang button").forEach((b) => setChecked(b, b.dataset.lang === state.language));
     renderChips();
     renderExamples();
     renderTaps();
@@ -118,17 +118,36 @@
     if (!$("#screen-receipt").classList.contains("hidden")) renderReceipt();
   }
 
+  // Single-choice groups follow the ARIA radio pattern: role=radiogroup > role=radio[aria-checked], roving tabindex,
+  // arrow keys move + select. Buttons stay <button> so click/tap behaviour is unchanged.
+  const focusChecked = (group) => group?.querySelector('[role="radio"][aria-checked="true"]')?.focus({ preventScroll: true });
+  function setChecked(b, on) { b.setAttribute("aria-checked", String(on)); b.tabIndex = on ? 0 : -1; }
+  function radioKeys(group) {
+    const radios = () => [...group.querySelectorAll('[role="radio"]')];
+    if (!radios().some((r) => r.getAttribute("aria-checked") === "true")) radios().forEach((r, i) => { r.tabIndex = i === 0 ? 0 : -1; });
+    group.onkeydown = (e) => {
+      const list = radios(); const i = list.indexOf(document.activeElement); if (i < 0) return;
+      let j = null;
+      if (e.key === "ArrowRight" || e.key === "ArrowDown") j = (i + 1) % list.length;
+      else if (e.key === "ArrowLeft" || e.key === "ArrowUp") j = (i - 1 + list.length) % list.length;
+      else if (e.key === "Home") j = 0; else if (e.key === "End") j = list.length - 1;
+      if (j === null) return;
+      e.preventDefault(); list[j].click(); list[j].focus();
+    };
+  }
+
   function renderChips() {
     const box = $("#chips");
     box.replaceChildren();
     DATA.archetypes.forEach((a) => {
       const b = document.createElement("button");
-      b.type = "button"; b.className = "chip"; b.setAttribute("role", "listitem");
+      b.type = "button"; b.className = "chip"; b.setAttribute("role", "radio");
       b.textContent = archName(a);
-      b.setAttribute("aria-pressed", String(state.archetype_id === a.id));
-      b.onclick = () => { state.archetype_id = a.id; state.source = "manual"; renderChips(); $("#toQuestions").disabled = false; };
+      setChecked(b, state.archetype_id === a.id);
+      b.onclick = () => { state.archetype_id = a.id; state.source = "manual"; renderChips(); $("#toQuestions").disabled = false; focusChecked(box); };
       box.appendChild(b);
     });
+    radioKeys(box);
     updateNext();
   }
   const updateNext = () => { $("#toQuestions").disabled = !state.archetype_id && $("#description").value.trim().length < 8; };
@@ -169,12 +188,13 @@
       box.replaceChildren();
       TAPS[q].forEach((val) => {
         const b = document.createElement("button");
-        b.type = "button"; b.className = "tap";
+        b.type = "button"; b.className = "tap"; b.setAttribute("role", "radio");
         b.textContent = q === "current_handling" ? t().who[val] : String(val);
-        b.setAttribute("aria-pressed", String(state.answers[q] === val));
-        b.onclick = () => { state.answers[q] = val; renderTaps(); };
+        setChecked(b, state.answers[q] === val);
+        b.onclick = () => { state.answers[q] = val; renderTaps(); focusChecked($(`.taps[data-q="${q}"]`)); };
         box.appendChild(b);
       });
+      radioKeys(box);
     });
     const done = Object.values(state.answers).every((v) => v !== null);
     $("#toReceipt").disabled = !done;
@@ -199,16 +219,17 @@
   function tierSwitch(cfg, tier, s) {
     const wrap = document.createElement("div"); wrap.className = "tier";
     const lab = document.createElement("div"); lab.className = "k"; lab.textContent = s.tierLabel;
-    const seg = document.createElement("div"); seg.className = "seg";
+    const seg = document.createElement("div"); seg.className = "seg"; seg.setAttribute("role", "radiogroup"); seg.setAttribute("aria-label", s.tierLabel);
     TIERS.filter((k) => k === "custom" || (cfg.run_models && cfg.run_models[k])).forEach((k) => {
-      const b = document.createElement("button"); b.type = "button"; b.textContent = s.tiers[k];
-      b.setAttribute("aria-pressed", String(state.searchOpen ? k === "custom" : k === tier));
+      const b = document.createElement("button"); b.type = "button"; b.textContent = s.tiers[k]; b.setAttribute("role", "radio");
+      setChecked(b, state.searchOpen ? k === "custom" : k === tier);
       b.onclick = () => {
         if (k === "custom") { state.searchOpen = true; renderReceipt(); $("#twSearch")?.focus(); return; }
-        state.model_tier = k; state.searchOpen = false; renderReceipt(); location.hash = encodeState();
+        state.model_tier = k; state.searchOpen = false; renderReceipt(); location.hash = encodeState(); focusChecked($(".tier .seg"));
       };
       seg.appendChild(b);
     });
+    radioKeys(seg);
     wrap.append(lab, seg);
     if (state.searchOpen) wrap.appendChild(searchPanel(s));
     const m = Engine.resolveModel(cfg, tier);

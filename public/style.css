@@ -14,8 +14,8 @@ body { margin: 0; background: var(--paper); color: var(--ink); line-height: 1.45
 .top { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid var(--line); }
 .top h1 { font-size: 1.25rem; margin: 0; }
 .lang { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
-.lang button { background: none; border: none; padding: 8px 12px; font: inherit; font-size: 0.95rem; cursor: pointer; min-height: 40px; }
-.lang button[aria-pressed="true"] { background: var(--ink); color: #fff; }
+.lang button { background: none; border: none; padding: 8px 12px; font: inherit; font-size: 0.95rem; cursor: pointer; min-height: 44px; }
+.lang button[aria-checked="true"] { background: var(--ink); color: #fff; }
 main { max-width: 560px; margin: 0 auto; padding: 16px; }
 .screen.hidden { display: none; }
 .lead { font-size: 1.1rem; margin: 8px 0 12px; }
@@ -23,7 +23,7 @@ textarea { width: 100%; font: inherit; font-size: 1.05rem; padding: 12px; border
 .hint { color: var(--muted); margin: 14px 0 6px; }
 .chips, .taps { display: flex; flex-wrap: wrap; gap: 8px; }
 .chip, .tap { border: 1px solid var(--line); background: #fff; border-radius: 999px; padding: 10px 14px; font: inherit; font-size: 1rem; cursor: pointer; min-height: 44px; }
-.chip[aria-pressed="true"], .tap[aria-pressed="true"] { background: var(--ink); color: #fff; border-color: var(--ink); }
+.chip[aria-checked="true"], .tap[aria-checked="true"] { background: var(--ink); color: #fff; border-color: var(--ink); }
 fieldset { border: none; padding: 0; margin: 18px 0; }
 legend { font-weight: 600; margin-bottom: 8px; padding: 0; }
 .row { display: flex; gap: 10px; margin-top: 18px; }
@@ -60,7 +60,7 @@ button[disabled] { opacity: 0.5; cursor: not-allowed; }
 .receipt .tier .k { font-weight: 600; margin-bottom: 6px; }
 .receipt .tier .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
 .receipt .tier .seg button { background: none; border: none; padding: 8px 14px; font: inherit; font-size: 0.95rem; cursor: pointer; min-height: 40px; }
-.receipt .tier .seg button[aria-pressed="true"] { background: var(--ink); color: #fff; }
+.receipt .tier .seg button[aria-checked="true"] { background: var(--ink); color: #fff; }
 .receipt .tier small { display: block; color: var(--muted); font-size: 0.85rem; margin-top: 6px; }
 
 .receipt .twsearch { margin-top: 8px; }

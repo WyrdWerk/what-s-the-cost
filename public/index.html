@@ -10,9 +10,9 @@
 <body>
   <header class="top">
     <h1 data-i18n="title">Cost Kitna Hoga?</h1>
-    <div class="lang" role="group" aria-label="Language">
-      <button id="langEn" type="button" data-lang="en" aria-pressed="true">English</button>
-      <button id="langHi" type="button" data-lang="hi" aria-pressed="false">हिन्दी</button>
+    <div class="lang" role="radiogroup" aria-label="Language">
+      <button id="langEn" type="button" role="radio" data-lang="en" aria-checked="true">English</button>
+      <button id="langHi" type="button" role="radio" data-lang="hi" aria-checked="false" tabindex="-1">हिन्दी</button>
     </div>
   </header>
 
@@ -22,8 +22,8 @@
       <p class="lead" data-i18n="lead">Describe one repetitive job in your business. Hindi or English.</p>
       <textarea id="description" rows="4" data-i18n-placeholder="descPlaceholder"
         placeholder="e.g. Every day I send 20 quotations on WhatsApp and then chase replies"></textarea>
-      <p class="hint" data-i18n="chipsHint">Or tap the closest match:</p>
-      <div id="chips" class="chips" role="list"></div>
+      <p class="hint" id="chipsHint" data-i18n="chipsHint">Or tap the closest match:</p>
+      <div id="chips" class="chips" role="radiogroup" aria-labelledby="chipsHint"></div>
       <p class="hint" data-i18n="examples">Try an example:</p>
       <div id="examples" class="chips"></div>
       <button id="toQuestions" class="primary" type="button" data-i18n="next">Next →</button>
@@ -34,16 +34,16 @@
     <section id="screen-questions" class="screen hidden">
       <p id="matchLabel" class="match"></p>
       <fieldset>
-        <legend data-i18n="qVolume">How many times a day?</legend>
-        <div class="taps" data-q="tasks_per_day"></div>
+        <legend id="lgVolume" data-i18n="qVolume">How many times a day?</legend>
+        <div class="taps" data-q="tasks_per_day" role="radiogroup" aria-labelledby="lgVolume"></div>
       </fieldset>
       <fieldset>
-        <legend data-i18n="qWho">Who does it now?</legend>
-        <div class="taps" data-q="current_handling"></div>
+        <legend id="lgWho" data-i18n="qWho">Who does it now?</legend>
+        <div class="taps" data-q="current_handling" role="radiogroup" aria-labelledby="lgWho"></div>
       </fieldset>
       <fieldset>
-        <legend data-i18n="qMinutes">Minutes per task?</legend>
-        <div class="taps" data-q="minutes_per_task"></div>
+        <legend id="lgMinutes" data-i18n="qMinutes">Minutes per task?</legend>
+        <div class="taps" data-q="minutes_per_task" role="radiogroup" aria-labelledby="lgMinutes"></div>
       </fieldset>
       <div class="row">
         <button id="backToDescribe" class="ghost" type="button" data-i18n="back">← Back</button>

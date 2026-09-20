@@ -1,11 +1,11 @@
 // Offline support: precache the app shell + data; cache-first for same-origin static files.
 // /api/* is never cached — the client already treats a failed classifier call as "manual mode".
-const VERSION = "ckh-v3";
+const VERSION = "ckh-v4";
 const SHELL = ["/", "/index.html", "/style.css", "/app.js", "/engine.js",
   "/data/archetypes.json", "/data/config.json", "/data/scenarios.json"];
 
 self.addEventListener("install", (e) => {
-  e.waitUntil(caches.open(VERSION).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(VERSION).then((c) => c.addAll(SHELL.map((u) => new Request(u, { cache: "reload" })))).then(() => self.skipWaiting()));
 });
 
 self.addEventListener("activate", (e) => {
