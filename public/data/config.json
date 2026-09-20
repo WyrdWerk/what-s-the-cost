@@ -12,6 +12,6 @@
     "input_usd_per_million": 10,
     "output_usd_per_million": 50,
     "pricing_snapshot_date": "2026-09-20",
-    "pricing_source": "https://tokenwatch.wyrdwerk.com/api/v1/models?search=claude-fable-5.1&provider=anthropic"
+    "pricing_source": "https://tokenwatch.wyrdwerk.com/api/v1/models/claude-fable-5.1/providers (provider=anthropic; USD per million tokens)"
   }
 }
