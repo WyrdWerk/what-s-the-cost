@@ -53,3 +53,4 @@ button[disabled] { opacity: 0.5; cursor: not-allowed; }
 .receipt .foot { margin-top: 14px; padding-top: 10px; border-top: 1px dashed var(--line); color: var(--muted); font-size: 0.85rem; }
 .receipt .foot p { margin: 6px 0; }
 .receipt .cta { display: inline-block; margin-top: 8px; color: var(--accent); font-weight: 600; }
+.chip.example { border-style: dashed; background: transparent; }

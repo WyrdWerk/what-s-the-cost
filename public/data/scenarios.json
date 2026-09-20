@@ -1,0 +1,55 @@
+{
+  "_status": "Canned scenarios: keyword-matched presets used when the classifier is unavailable, and the five demo cases. Keywords are lowercase substrings matched against the description (Hindi, romanised Hindi, English).",
+  "scenarios": [
+    {
+      "id": "demo_quotation",
+      "title_en": "20 WhatsApp quotations a day",
+      "title_hi": "रोज़ 20 WhatsApp कोटेशन",
+      "description_en": "Every day I send about 20 quotations on WhatsApp and then have to chase each customer for a reply, 5 minutes each.",
+      "description_hi": "रोज़ करीब 20 कोटेशन WhatsApp पर भेजता हूँ, फिर हर ग्राहक से जवाब के लिए फॉलो-अप, हर एक में 5 मिनट।",
+      "keywords": ["quotation", "quote", "kotation", "कोटेशन", "follow up", "follow-up", "followup", "फॉलो", "lead", "enquiry"],
+      "archetype_id": "quotation_followup",
+      "answers": { "tasks_per_day": 20, "minutes_per_task": 5, "current_handling": "me" }
+    },
+    {
+      "id": "demo_invoice",
+      "title_en": "Staff typing 10 invoices into Tally",
+      "title_hi": "स्टाफ रोज़ 10 बिल Tally में",
+      "description_en": "My accounts person types about 10 supplier invoices into Tally every day, 10 minutes each.",
+      "description_hi": "मेरा अकाउंट्स वाला रोज़ करीब 10 सप्लायर बिल Tally में टाइप करता है, हर एक में 10 मिनट।",
+      "keywords": ["invoice", "bill entry", "purchase order", " po ", "tally", "entry", "इनवॉइस", "बिल एंट्री", "एंट्री", "data entry"],
+      "archetype_id": "invoice_po_entry",
+      "answers": { "tasks_per_day": 10, "minutes_per_task": 10, "current_handling": "staff" }
+    },
+    {
+      "id": "demo_billing",
+      "title_en": "Billing + stock for 50 sales a day",
+      "title_hi": "रोज़ 50 बिक्री की बिलिंग + स्टॉक",
+      "description_en": "We make around 50 bills a day and update the stock register by hand, 2 minutes each.",
+      "description_hi": "रोज़ करीब 50 बिल बनाते हैं और स्टॉक रजिस्टर हाथ से अपडेट करते हैं, हर एक में 2 मिनट।",
+      "keywords": ["stock", "inventory", "billing", "godown", "स्टॉक", "इन्वेंटरी", "बिलिंग", "maal"],
+      "archetype_id": "billing_inventory",
+      "answers": { "tasks_per_day": 50, "minutes_per_task": 2, "current_handling": "staff" }
+    },
+    {
+      "id": "demo_catalog",
+      "title_en": "Answering 50 product questions",
+      "title_hi": "रोज़ 50 प्रोडक्ट सवाल",
+      "description_en": "Customers message about 50 times a day asking price and availability of items; staff answer each in 2 minutes.",
+      "description_hi": "ग्राहक रोज़ करीब 50 बार दाम और स्टॉक पूछते हैं; स्टाफ हर एक का जवाब 2 मिनट में देता है।",
+      "keywords": ["catalog", "catalogue", "price list", "availability", "customer question", "enquir", "inquir", "कैटलॉग", "दाम", "ग्राहक", "rate"],
+      "archetype_id": "catalog_support",
+      "answers": { "tasks_per_day": 50, "minutes_per_task": 2, "current_handling": "staff" }
+    },
+    {
+      "id": "demo_report",
+      "title_en": "One daily sales report",
+      "title_hi": "रोज़ एक बिक्री रिपोर्ट",
+      "description_en": "Every evening I compile the day's sales and stock summary myself; it takes about 30 minutes.",
+      "description_hi": "हर शाम मैं खुद दिन की बिक्री और स्टॉक का सार बनाता हूँ; करीब 30 मिनट लगते हैं।",
+      "keywords": ["report", "summary", "mis", "रिपोर्ट", "सार", "daily sales", "weekly"],
+      "archetype_id": "report_generation",
+      "answers": { "tasks_per_day": 1, "minutes_per_task": 30, "current_handling": "me" }
+    }
+  ]
+}

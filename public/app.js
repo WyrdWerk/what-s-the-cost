@@ -27,7 +27,7 @@
       foot1: "Estimate, not a quote. Real price depends on the factors above.",
       foot2: "We do not save your workflow in an application database. AI mode sends it to Anthropic; their retention policies apply.",
       cta: "Talk to WyrdWerk → contact@wyrdwerk.com",
-      perMonth: "/mo",
+      perMonth: "/mo", examples: "Try an example:",
       aiThinking: "Reading your description…", aiFallback: "Couldn't read that automatically — tap the closest match below.",
     },
     hi: {
@@ -52,7 +52,7 @@
       foot1: "यह अनुमान है, कोटेशन नहीं। असली कीमत ऊपर के कारकों पर निर्भर है।",
       foot2: "हम आपका वर्कफ़्लो किसी एप्लिकेशन डेटाबेस में नहीं रखते। AI मोड इसे Anthropic को भेजता है; उनकी रिटेंशन नीतियाँ लागू होती हैं।",
       cta: "WyrdWerk से बात करें → contact@wyrdwerk.com",
-      perMonth: "/महीना",
+      perMonth: "/महीना", examples: "उदाहरण देखें:",
       aiThinking: "आपका विवरण पढ़ रहे हैं…", aiFallback: "अपने आप समझ नहीं आया — नीचे सबसे नज़दीकी काम चुनिए।",
     },
   };
@@ -82,11 +82,12 @@
 
   // ---------- data ----------
   async function loadData() {
-    const [a, c] = await Promise.all([
+    const [a, c, sc] = await Promise.all([
       fetch("/data/archetypes.json").then((r) => r.json()),
       fetch("/data/config.json").then((r) => r.json()),
+      fetch("/data/scenarios.json").then((r) => r.json()).catch(() => ({ scenarios: [] })),
     ]);
-    DATA = { archetypes: a.archetypes, config: c };
+    DATA = { archetypes: a.archetypes, config: c, scenarios: sc.scenarios || [] };
   }
   const archetypeById = (id) => DATA.archetypes.find((x) => x.id === id) || null;
   const archName = (a) => (state.language === "hi" ? a.name_hi : a.name_en);
@@ -98,6 +99,7 @@
     document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => { el.placeholder = t()[el.dataset.i18nPlaceholder]; });
     document.querySelectorAll(".lang button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.lang === state.language)));
     renderChips();
+    renderExamples();
     renderTaps();
     renderMatchLabel();
     if (!$("#screen-receipt").classList.contains("hidden")) renderReceipt();
@@ -117,6 +119,36 @@
     updateNext();
   }
   const updateNext = () => { $("#toQuestions").disabled = !state.archetype_id && $("#description").value.trim().length < 8; };
+
+  function renderExamples() {
+    const box = $("#examples");
+    box.replaceChildren();
+    DATA.scenarios.forEach((sc) => {
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "chip example";
+      b.textContent = state.language === "hi" ? sc.title_hi : sc.title_en;
+      b.onclick = () => {
+        $("#description").value = state.description = state.language === "hi" ? sc.description_hi : sc.description_en;
+        applyScenario(sc, "canned");
+        show("#screen-questions"); renderTaps(); renderMatchLabel();
+      };
+      box.appendChild(b);
+    });
+  }
+  function applyScenario(sc, source) {
+    state.archetype_id = sc.archetype_id; state.source = source;
+    state.answers = { ...sc.answers };
+    renderChips();
+  }
+  // Keyword fallback when the classifier is unavailable. Longest keyword hit wins; null if nothing matches.
+  function matchScenario(text) {
+    const hay = " " + text.toLowerCase() + " ";
+    let best = null, bestLen = 0;
+    DATA.scenarios.forEach((sc) => sc.keywords.forEach((k) => {
+      if (k.length > bestLen && hay.includes(k.toLowerCase())) { best = sc; bestLen = k.length; }
+    }));
+    return best;
+  }
 
   function renderTaps() {
     document.querySelectorAll(".taps").forEach((box) => {
@@ -138,7 +170,7 @@
   function renderMatchLabel() {
     const a = archetypeById(state.archetype_id);
     if (!a) return;
-    const key = state.source === "ai" ? "closest" : "picked";
+    const key = state.source === "manual" ? "picked" : "closest";
     $("#matchLabel").textContent = fmt(t()[key], { name: archName(a) });
   }
 
@@ -160,7 +192,7 @@
 
     const h = document.createElement("h2"); h.textContent = s.receiptTitle;
     const sub = document.createElement("p"); sub.className = "sub";
-    sub.textContent = fmt(s[state.source === "ai" ? "closest" : "picked"], { name: archName(a) }) + " · " + s.receiptSub;
+    sub.textContent = fmt(s[state.source === "manual" ? "picked" : "closest"], { name: archName(a) }) + " · " + s.receiptSub;
     box.append(h, sub);
 
     box.appendChild(line(s.setup, rangeInr(res.setup)));
@@ -283,7 +315,9 @@
           state.answers = { tasks_per_day: ai.tasks_per_day, current_handling: ai.current_handling, minutes_per_task: ai.minutes_per_task };
           renderChips();
         } else {
-          $("#aiStatus").textContent = t().aiFallback; return;
+          const sc = matchScenario(state.description);
+          if (sc) applyScenario(sc, "canned");
+          else { $("#aiStatus").textContent = t().aiFallback; return; }
         }
       }
       if (!state.archetype_id) return;
@@ -305,7 +339,7 @@
     const shared = location.hash.length > 1 ? decodeState(location.hash.slice(1)) : null;
     if (shared) {
       Object.assign(state, { language: shared.language, description: shared.description, archetype_id: shared.frozen.archetype.id,
-        source: shared.source === "ai" ? "ai" : "shared", answers: shared.answers, frozen: shared.frozen });
+        source: ["ai", "canned", "manual"].includes(shared.source) ? shared.source : "shared", answers: shared.answers, frozen: shared.frozen });
       applyI18n(); renderReceipt(); show("#screen-receipt");
     } else {
       applyI18n(); show("#screen-describe");
@@ -314,4 +348,5 @@
   // Exposed for the AI layer to hook in (layer 2 wires the describe → classify flow).
   window.CKH = { state, classify, renderChips, renderMatchLabel };
   init();
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => {});
 })();
