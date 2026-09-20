@@ -109,7 +109,7 @@ Repo: https://github.com/WyrdWerk/what-s-the-cost (public — no secrets, no cli
 - Footer lines are fixed copy: *"Estimate, not a quote. Real price depends on the factors above."*
   and *"We do not save your workflow in an application database. AI mode sends it to Anthropic;
   their retention policies apply."* Do not paraphrase.
-- Contact: **contact@wyrdwerk.com** (never yash@).
+- Contact: **connect@wyrdwerk.com** (never yash@).
 - TokenWatch (tokenwatch.wyrdwerk.com) is WyrdWerk's own pricing comparator and the source of the
   pinned model price. Fixed lookup: `/api/v1/models/<canonical-id>/providers`. Never fetch the
   full catalog at receipt time.

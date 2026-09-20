@@ -10,7 +10,7 @@ Every figure is a **rupee range, never a point estimate**. The footer says what 
 
 - **Live:** https://agentcost.wyrdwerk.com (also https://what-s-the-cost.pages.dev)
 - **Source:** https://github.com/WyrdWerk/what-s-the-cost
-- **Built by:** [WyrdWerk LLP](https://wyrdwerk.com), Indore — SME AI advisory and deployment. Contact: contact@wyrdwerk.com
+- **Built by:** [WyrdWerk LLP](https://wyrdwerk.com), Indore — SME AI advisory and deployment. Contact: connect@wyrdwerk.com
 - **Origin:** Claude Code Build Day hackathon, 20 September 2026.
 
 ---
@@ -265,7 +265,7 @@ Built and deployed in this order; each layer works without the ones after it.
 2. **Model classification** — layered on the same flow. Any failure is silent to the user.
 3. **Canned scenarios** — keyword match on the description when the model returns `null`; also the
    demo chips.
-4. **Service worker** — `public/sw.js` precaches the shell and data files (version string `VERSION` in `sw.js`, currently `ckh-v11`), cache-first
+4. **Service worker** — `public/sw.js` precaches the shell and data files (version string `VERSION` in `sw.js`, currently `ckh-v12`), cache-first
    for same-origin GETs, never caches `/api/*`. **Acceptance test passed:** a *new* estimate was
    completed with the network off (page from cache → typed description → API unreachable → keyword
    match → receipt).
@@ -432,7 +432,7 @@ curl -s -X POST https://agentcost.wyrdwerk.com/api/estimate -H 'content-type: ap
   and can change it.
 - **`language` from the classifier is informational**; the UI language follows the toggle.
 - No PDF export, WhatsApp integration, or voice — deliberately out of scope.
-- The service worker version string (`ckh-v11` in `sw.js`) must be bumped when cached files change
+- The service worker version string (`ckh-v12` in `sw.js`) must be bumped when cached files change
   in ways that matter offline.
 
 ## 15. Decision log

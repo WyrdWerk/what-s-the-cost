@@ -26,7 +26,7 @@
       assumptions: "Assumptions: {days} working days/month · $1 = ₹{fx} · pricing snapshot {date}",
       foot1: "Estimate, not a quote. Real price depends on the factors above.",
       foot2: "We do not save your workflow in an application database. AI mode sends it to Anthropic; their retention policies apply.",
-      cta: "Talk to WyrdWerk → contact@wyrdwerk.com",
+      cta: "Talk to WyrdWerk → connect@wyrdwerk.com",
       savePdf: "Save as PDF", saveImage: "Save as image", saving: "Preparing…", printLink: "Open this estimate again:", tapToReopen: "tap this link to reopen with the same numbers", madeWith: "agentcost.wyrdwerk.com · {date}",
       perMonth: "/mo", examples: "Try an example:",
       tierLabel: "Which model runs the agent?", tierSub: "{model} · intelligence {iq} · ${pin}/{pout} per M tokens",
@@ -58,7 +58,7 @@
       assumptions: "मान्यताएँ: {days} कार्य-दिवस/महीना · $1 = ₹{fx} · मूल्य स्नैपशॉट {date}",
       foot1: "यह अनुमान है, कोटेशन नहीं। असली कीमत ऊपर के कारकों पर निर्भर है।",
       foot2: "हम आपका वर्कफ़्लो किसी एप्लिकेशन डेटाबेस में नहीं रखते। AI मोड इसे Anthropic को भेजता है; उनकी रिटेंशन नीतियाँ लागू होती हैं।",
-      cta: "WyrdWerk से बात करें → contact@wyrdwerk.com",
+      cta: "WyrdWerk से बात करें → connect@wyrdwerk.com",
       savePdf: "PDF सेव करें", saveImage: "इमेज सेव करें", saving: "बना रहे हैं…", printLink: "यह अनुमान फिर खोलें:", tapToReopen: "इसी आँकड़ों के साथ खोलने के लिए यह लिंक दबाएँ", madeWith: "agentcost.wyrdwerk.com · {date}",
       perMonth: "/महीना", examples: "उदाहरण देखें:",
       tierLabel: "एजेंट कौन-सा मॉडल चलाएगा?", tierSub: "{model} · इंटेलिजेंस {iq} · ${pin}/{pout} प्रति M टोकन",
@@ -409,7 +409,7 @@
     const p0 = document.createElement("p"); p0.textContent = R.assumptions;
     const p1 = document.createElement("p"); p1.textContent = R.foot1;
     const p2 = document.createElement("p"); p2.textContent = R.foot2;
-    const cta = document.createElement("a"); cta.className = "cta"; cta.href = "mailto:contact@wyrdwerk.com"; cta.textContent = R.cta;
+    const cta = document.createElement("a"); cta.className = "cta"; cta.href = "mailto:connect@wyrdwerk.com"; cta.textContent = R.cta;
     // Print-only: the share link, so a PDF can be reopened. Hidden on screen via CSS.
     const pl = document.createElement("p"); pl.className = "print-only";
     const plA = document.createElement("a"); plA.href = location.origin + location.pathname + "#" + encodeState();
