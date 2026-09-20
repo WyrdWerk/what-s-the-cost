@@ -244,7 +244,8 @@
     if (state.searchOpen) wrap.appendChild(searchPanel(s));
     const m = Engine.resolveModel(cfg, tier);
     const sub = document.createElement("small");
-    sub.textContent = fmt(s.tierSub, { model: m.display_name || m.id, iq: m.intelligence_index ?? "—", pin: m.input_usd_per_million, pout: m.output_usd_per_million })
+    const via = tier === "custom" && m.provider && m.provider !== "openrouter" ? " via " + m.provider : "";
+    sub.textContent = fmt(s.tierSub, { model: (m.display_name || m.id) + via, iq: m.intelligence_index ?? "—", pin: m.input_usd_per_million, pout: m.output_usd_per_million })
       + (tier === "custom" ? " · " + fmt(s.customLive, { date: m.pricing_snapshot_date, source: s.sources[m.pricing_source] || s.sources.tokenwatch }) : "");
     wrap.appendChild(sub); return wrap;
   }
@@ -321,7 +322,7 @@
       if (!usable.length) { note(s.searchNone); return; }
       usable.forEach((m) => {
         const b = document.createElement("button"); b.type = "button"; b.className = "twrow";
-        const name = document.createElement("span"); name.textContent = String(m.name || m.id).slice(0, 60) + " · " + String(m.provider_display || m.provider || "").slice(0, 24);
+        const name = document.createElement("span"); name.textContent = String(m.name || m.id).slice(0, 60) + " · via " + String(m.provider_display || m.provider || "?").slice(0, 24);
         const price = document.createElement("span"); price.className = "price";
         price.textContent = "$" + m.pricing.input + "/" + m.pricing.output + (m.benchmarks?.intelligence_index != null ? " · iq " + m.benchmarks.intelligence_index : "");
         b.append(name, price);
