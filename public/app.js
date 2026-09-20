@@ -125,7 +125,7 @@
     renderExamples();
     renderTaps();
     renderMatchLabel();
-    if (!$("#screen-receipt").classList.contains("hidden")) renderReceipt();
+    if (!$("#screen-receipt").classList.contains("hidden") && (state.frozen || state.archetype_id)) renderReceipt();
   }
 
   // Single-choice groups follow the ARIA radio pattern: role=radiogroup > role=radio[aria-checked], roving tabindex,
@@ -530,7 +530,7 @@
       history.replaceState(null, "", location.pathname);
       state.archetype_id = null; state.frozen = null; state.source = "manual"; state.model_tier = null; state.custom_model = null; state.searchOpen = false;
       state.answers = { tasks_per_day: null, current_handling: null, minutes_per_task: null };
-      $("#description").value = ""; applyI18n(); show("#screen-describe");
+      $("#description").value = ""; show("#screen-describe"); applyI18n();
     };
     $("#copyLink").onclick = async () => {
       location.hash = encodeState();
