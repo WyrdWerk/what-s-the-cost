@@ -1,22 +1,22 @@
 {
-  "_status": "DRAFT constants. run_models tiers pinned from TokenWatch on 2026-09-20 (first-party provider rows, USD per million tokens); setup_hourly_rate_inr and setup_hours set by founder 2026-09-20; owner_hourly_value_inr and staff wages remain implementer drafts. All values are disclosed on the receipt.",
+  "_status": "Founder defaults set 2026-09-20. Run-model tiers are pinned TokenWatch snapshots in USD per million tokens; GLM 5.3 Flash uses the median across 36 provider rows. All values are disclosed on the receipt.",
   "working_days_per_month": 26,
-  "owner_hourly_value_inr": [500, 1000],
-  "setup_hourly_rate_inr": [800, 1200],
+  "owner_hourly_value_inr": [600, 600],
+  "setup_hourly_rate_inr": [1000, 1000],
   "usd_to_inr": 96,
   "usd_to_inr_source": "frankfurter.dev 2026-09-18 (95.88) / open.er-api.com 2026-09-20 (95.94), rounded",
-  "default_tier": "balanced",
+  "default_tier": "cheap",
   "run_models": {
     "cheap": {
-      "id": "google/gemini-3.8-flash",
-      "display_name": "Gemini 3.8 Flash",
-      "provider": "google",
-      "input_usd_per_million": 0.375,
-      "output_usd_per_million": 1.875,
-      "intelligence_index": 40.9,
-      "agentic_index": 40.2,
+      "id": "z-ai/glm-5.3-flash",
+      "display_name": "GLM 5.3 Flash",
+      "provider": "median of 36 TokenWatch providers",
+      "input_usd_per_million": 0.15,
+      "output_usd_per_million": 0.5,
+      "intelligence_index": 41.8,
+      "agentic_index": 50.9,
       "pricing_snapshot_date": "2026-09-20",
-      "pricing_source": "https://tokenwatch.wyrdwerk.com/api/v1/models/gemini-3.8-flash/providers (provider=google)"
+      "pricing_source": "https://tokenwatch.wyrdwerk.com/api/v1/models/glm-5.3-flash/providers (median of 36 provider rows)"
     },
     "balanced": {
       "id": "anthropic/claude-sonnet-5",

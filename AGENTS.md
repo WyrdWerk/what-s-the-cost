@@ -49,7 +49,7 @@ Repo: https://github.com/WyrdWerk/what-s-the-cost (public — no secrets, no cli
 | `public/index.html` | three screens, `data-i18n` hooks | adding a UI element (add its string to both `STR.en` and `STR.hi`) |
 | `public/style.css` | receipt-as-bill look, ≥44 px tap targets | styling |
 | `public/sw.js` | offline precache list and strategy | adding a static file the app needs offline (add to `SHELL`, bump `VERSION`) |
-| `public/data/config.json` | constants, three pinned model tiers (the "Other…" search in `app.js` makes the only live price calls: TokenWatch `?search=&limit=10`, or the public OpenRouter `/api/v1/models` catalog fetched once on explicit source pick) (`run_models`, `default_tier`), FX | founder tunes numbers; tier prices come from TokenWatch, USD per million |
+| `public/data/config.json` | constants, three pinned model tiers (the "Other…" search in `app.js` makes the only live price calls: TokenWatch `?search=&limit=10`, or the public OpenRouter `/api/v1/models` catalog fetched once on explicit source pick) (`run_models`, `default_tier`), FX | founder tunes numbers; tier prices come from TokenWatch, USD per million; GLM's pinned price is the median across provider rows |
 | `public/data/archetypes.json` | six job types | founder tunes numbers; adding an id also requires the enum in `estimate.js` |
 | `public/data/scenarios.json` | five demo presets + keyword fallback | changing demos |
 | `functions/api/estimate.js` | classifier Function | prompt, schema, validation, timeout |
@@ -67,7 +67,8 @@ Repo: https://github.com/WyrdWerk/what-s-the-cost (public — no secrets, no cli
   `ARCHETYPE_IDS` enum in `estimate.js`. Change all three.
 - **Anthropic structured-output schema dialect** rejects `minimum`/`maximum` on integers (HTTP 400).
   Numeric bounds live in `validateModelOutput`, not the schema.
-- **`max_tokens` covers thinking plus output** on `claude-fable-5-1`. Keep it generous (4096);
+- **`max_tokens` covers thinking plus output** on `claude-fable-5-1`. It is capped at 400 for the
+  five-field classifier response;
   a `stop_reason: "max_tokens"` is treated as failure.
 - **Select the content block with `type === "text"`**, not `content[0]`.
 - **`source` semantics:** `manual` = user tapped a chip (confident label "Job type"); `ai`,

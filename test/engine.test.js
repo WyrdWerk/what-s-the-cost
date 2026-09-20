@@ -3,6 +3,8 @@
 // Run: node test/engine.test.js
 const assert = require("node:assert/strict");
 const Engine = require("../public/engine.js");
+const productConfig = require("../public/data/config.json");
+const { archetypes } = require("../public/data/archetypes.json");
 
 // Config fixture. Pairs are stored [low, high]; the engine uses midpoints: owner ₹750/hr, setup ₹1500/hr.
 const cfg = {
@@ -127,5 +129,23 @@ const near = (x, y, msg) => assert.ok(Math.abs(x - y) < 0.01, (msg || "") + " ex
   const free = Engine.estimate({ ...arch, setup_hours: 0 }, { ...cfg, run_model: { id: "free", input_usd_per_million: 0, output_usd_per_million: 0 } }, ans);
   assert.equal(free.run, 0); assert.equal(free.setup, 0); assert.equal(free.breakEvenMonth, 1);
   console.log("Case G ok: input contract");
+}
+
+// Case H: founder defaults shown in Advanced are the values used by every fresh estimate.
+// GLM 5.3 Flash pricing is the median across the 36 TokenWatch provider rows on 2026-09-20:
+// the two middle input prices are $0.15/M and the two middle output prices are $0.50/M.
+{
+  near((productConfig.setup_hourly_rate_inr[0] + productConfig.setup_hourly_rate_inr[1]) / 2, 1000, "default setup rate");
+  near((productConfig.owner_hourly_value_inr[0] + productConfig.owner_hourly_value_inr[1]) / 2, 600, "default owner value");
+  archetypes.forEach((a) => {
+    near((a.setup_hours[0] + a.setup_hours[1]) / 2, 5.5, a.id + " setup hours");
+    near((a.baseline_wage_assumption.inr_per_hour[0] + a.baseline_wage_assumption.inr_per_hour[1]) / 2, 200, a.id + " staff wage");
+    assert.equal(a.review_min_per_day, 10, a.id + " review minutes");
+  });
+  const model = productConfig.run_models[productConfig.default_tier];
+  assert.equal(model.id, "z-ai/glm-5.3-flash");
+  near(model.input_usd_per_million, 0.15, "GLM median input price");
+  near(model.output_usd_per_million, 0.5, "GLM median output price");
+  console.log("Case H ok: founder defaults and GLM median pricing");
 }
 console.log("all engine tests passed");

@@ -188,21 +188,22 @@ how trustworthy its numbers are.
 | Field | Meaning | Current value |
 |---|---|---|
 | `working_days_per_month` | `D` above | 26 |
-| `owner_hourly_value_inr` | `[lo, hi]` ₹/hr for the owner's time (oversight, and baseline when "me") | [500, 1000] *(draft)* |
-| `setup_hourly_rate_inr` | `[lo, hi]` ₹/hr for build labour | [1200, 2500] *(draft)* |
+| `owner_hourly_value_inr` | `[lo, hi]` ₹/hr for the owner's time (oversight, and baseline when "me") | [600, 600] |
+| `setup_hourly_rate_inr` | `[lo, hi]` ₹/hr for build labour | [1000, 1000] |
 | `usd_to_inr` | pinned FX rate | 96 (frankfurter/er-api, 2026-09-20) |
-| `default_tier` | tier used until the user taps another | `balanced` |
+| `default_tier` | tier used until the user taps another | `cheap` (GLM 5.3 Flash) |
 | `run_models.<tier>.id` / `display_name` | one pinned model per tier (`cheap`, `balanced`, `frontier`) | see below |
 | `run_models.<tier>.input_usd_per_million` / `output_usd_per_million` | USD per **million** tokens | see below |
 | *(engine contract)* | `Engine.estimate` throws `RangeError` for non-finite/negative/oversized inputs, unknown `current_handling`, an unknown horizon, or a missing priced model; every rupee output is asserted finite | — |
 | `run_models.<tier>.intelligence_index` / `agentic_index` | TokenWatch benchmark indices, shown under the switch | see below |
 | `run_models.<tier>.pricing_snapshot_date` / `pricing_source` | shown on the receipt / the TokenWatch lookup used | 2026-09-20 |
 
-Tiers pinned on 2026-09-20 from TokenWatch first-party provider rows:
+Tiers pinned on 2026-09-20 from TokenWatch. GLM uses the median across its 36 provider rows;
+the Anthropic models use first-party prices:
 
 | Tier | Model | $/M in | $/M out | Intelligence | Agentic |
 |---|---|---|---|---|---|
-| cheap | `google/gemini-3.8-flash` | 0.375 | 1.875 | 40.9 | 40.2 |
+| cheap (default) | `z-ai/glm-5.3-flash` | 0.15 | 0.50 | 41.8 | 50.9 |
 | balanced | `anthropic/claude-sonnet-5` | 2 | 10 | 38.2 | 43.6 |
 | frontier | `anthropic/claude-fable-5.1` | 10 | 50 | 53.4 | 57.9 |
 
@@ -232,7 +233,9 @@ The six ids: `quotation_followup`, `invoice_po_entry`, `billing_inventory`, `cat
 `report_generation`, `content_pipeline`. **If you add or rename an id you must also update the enum
 in `functions/api/estimate.js`.**
 
-Current numbers are marked `_status: DRAFT` — implementer estimates awaiting founder review.
+Setup time, staff wage, and review time use the founder defaults shown in the Advanced panel:
+5.5 hours, ₹200/hour, and 10 minutes/day for every archetype. Token and step assumptions remain
+estimates.
 
 ### `scenarios.json` — five canned presets
 
@@ -254,8 +257,8 @@ unavailable. Longest matching keyword wins.
 
 **Behaviour**
 - One call to Anthropic `claude-fable-5-1` with `output_config.format = {type: "json_schema", …}`
-  (native structured output, no beta header) and `output_config.effort = "low"`. `max_tokens: 4096`
-  because it caps thinking **plus** response.
+  (native structured output, no beta header) and `output_config.effort = "low"`. `max_tokens: 400`
+  caps classifier thinking plus its five-field response.
 - Reads the content block whose `type === "text"`, not the first block.
 - Server-side validation regardless of the schema: exactly the five keys, enum membership, finite
   bounded numbers. Anthropic's schema dialect rejects `minimum`/`maximum` on integers, so bounds
@@ -278,7 +281,7 @@ Built and deployed in this order; each layer works without the ones after it.
 2. **Model classification** — layered on the same flow. Any failure is silent to the user.
 3. **Canned scenarios** — keyword match on the description when the model returns `null`; also the
    demo chips.
-4. **Service worker** — `public/sw.js` precaches the shell and data files (version string `VERSION` in `sw.js`, currently `ckh-v15`), cache-first
+4. **Service worker** — `public/sw.js` precaches the shell and data files (version string `VERSION` in `sw.js`, currently `ckh-v16`), cache-first
    for same-origin GETs, never caches `/api/*`. **Acceptance test passed:** a *new* estimate was
    completed with the network off (page from cache → typed description → API unreachable → keyword
    match → receipt).
@@ -425,8 +428,8 @@ curl -s -X POST https://agentcost.wyrdwerk.com/api/estimate -H 'content-type: ap
   `agentcost.wyrdwerk.com` now return `public, max-age=0, must-revalidate`, matching `pages.dev`.
 
 
-- **Numbers are drafts.** `archetypes.json` and the owner/setup rates in `config.json` are
-  implementer estimates pending founder review.
+- **Token workloads are estimates.** The Advanced-panel defaults are founder-set; steps and tokens
+  per step in `archetypes.json` still need validation against real deployments.
 - **Model choice is three fixed tiers plus a manual search**, not a benchmark-driven suggestion per
   archetype. TokenWatch supports `GET /api/v1/models?benchmarked=true&min_intelligence=N&sort=input&limit=10`,
   so a "suggested cheapest model that clears this archetype's benchmark floor" is a natural next
@@ -444,7 +447,7 @@ curl -s -X POST https://agentcost.wyrdwerk.com/api/estimate -H 'content-type: ap
   and can change it.
 - **`language` from the classifier is informational**; the UI language follows the toggle.
 - No PDF export, WhatsApp integration, or voice — deliberately out of scope.
-- The service worker version string (`ckh-v15` in `sw.js`) must be bumped when cached files change
+- The service worker version string (`ckh-v16` in `sw.js`) must be bumped when cached files change
   in ways that matter offline.
 
 ## 15. Decision log
@@ -459,6 +462,7 @@ curl -s -X POST https://agentcost.wyrdwerk.com/api/estimate -H 'content-type: ap
 | 2026-09-20 | "Other…" model search via TokenWatch (`?search=&limit=10`), no BYO API key | Founder asked for wider choice; pricing needs no key |
 | 2026-09-20 | OpenRouter added as a second "Other…" source, still no key field | Founder proposed a client-side OpenRouter key + picker; `/api/v1/models` is public so the key adds only privacy risk. Catalog (~739 KB) loads once, only on explicit source pick — accepted exception to "never fetch the catalog", flagged to founder |
 | 2026-09-20 | Superseded: three model tiers (Gemini 3.8 Flash / Sonnet 5 / Fable 5.1) chosen on the receipt, default `balanced` | Founder chose "fixed tiers" over benchmark-suggested model; ~130× price spread made a single pinned model misleading |
+| 2026-09-20 | GLM 5.3 Flash replaces Gemini in the cheap tier and becomes the default token-cost model at TokenWatch median pricing ($0.15/M input, $0.50/M output across 36 providers); Sonnet 5 remains an optional tier | Founder judged Sonnet 5 too expensive as the default estimate |
 | 2026-09-20 | FX pinned ₹96/$ | frankfurter 95.88 (09-18), er-api 95.94 (09-20), rounded |
 | 2026-09-20 | `current_handling = "nobody"` ⇒ baseline ₹0 | No time is currently spent; agent cannot "save" it |
 | 2026-09-20 | Setup cost = hours × config hourly rate | One constant to tune instead of six ranges |
@@ -469,4 +473,5 @@ curl -s -X POST https://agentcost.wyrdwerk.com/api/estimate -H 'content-type: ap
 | 2026-09-20 | UI title renamed "Cost Kitna Hoga?" → "What's the cost?"; TokenWatch link added to header | Founder instruction |
 | 2026-09-20 | Subdomain `agentcost.wyrdwerk.com` | Founder choice over `kitna`/`cost`/`estimate` |
 | 2026-09-20 | **Ranges → single numbers (midpoints) + 3/6/12-month horizon projection with amortised setup; break-even = month k; verdict = pays back within the chosen period.** Advanced panel on Step 2 to override setup hours/rate, owner hourly value, staff wage, review minutes | Founder: ranges were creating confusion; owners think in quarters. Data files keep pairs for provenance and older share links still decode |
-| 2026-09-20 | Setup hours 5–6 (content pipeline 8–10), setup rate ₹800–1,200/hr | Founder numbers replacing implementer drafts |
+| 2026-09-20 | Superseded: setup hours 5–6 (content pipeline 8–10), setup rate ₹800–1,200/hr | Earlier founder defaults |
+| 2026-09-20 | Advanced defaults standardized across jobs: 5.5 setup hours, ₹1,000/hour setup, ₹600/hour owner time, ₹200/hour staff, 10 review minutes/day | Founder supplied the final default values |

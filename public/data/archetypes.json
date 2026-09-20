@@ -1,5 +1,5 @@
 {
-  "_status": "DRAFT — numbers below are implementer estimates so the product works today. This file is the founder's edit point; every value here is disclosed as an assumption, never a quote. Units: setup_hours in hours; tokens_per_step per single model call; review_min_per_day in minutes; wages in INR per hour.",
+  "_status": "Founder defaults set 2026-09-20: 5.5 setup hours, ₹200/hour staff wage, and 10 review minutes/day for every job type. Token assumptions remain estimates. Every value is disclosed as an assumption, never a quote.",
   "archetypes": [
     {
       "id": "quotation_followup",
@@ -7,8 +7,8 @@
       "name_hi": "कोटेशन फॉलो-अप (WhatsApp)",
       "does": "Reads each sent quotation, drafts a polite follow-up on WhatsApp, logs the reply and flags hot leads for you.",
       "setup_hours": [
-        5,
-        6
+        5.5,
+        5.5
       ],
       "steps_per_task": [
         3,
@@ -27,7 +27,7 @@
       "review_min_per_day": 10,
       "baseline_wage_assumption": {
         "inr_per_hour": [
-          120,
+          200,
           200
         ],
         "note": "sales/office staff, Indore SME"
@@ -51,8 +51,8 @@
       "name_hi": "इनवॉइस / PO एंट्री",
       "does": "Reads incoming invoices or purchase orders (PDF, photo, email) and enters line items into your accounting or ERP.",
       "setup_hours": [
-        5,
-        6
+        5.5,
+        5.5
       ],
       "steps_per_task": [
         2,
@@ -68,11 +68,11 @@
           600
         ]
       },
-      "review_min_per_day": 15,
+      "review_min_per_day": 10,
       "baseline_wage_assumption": {
         "inr_per_hour": [
-          100,
-          180
+          200,
+          200
         ],
         "note": "data-entry / accounts assistant"
       },
@@ -95,8 +95,8 @@
       "name_hi": "बिलिंग + इन्वेंटरी",
       "does": "Creates bills from orders and updates stock counts, flagging low stock and mismatches.",
       "setup_hours": [
-        5,
-        6
+        5.5,
+        5.5
       ],
       "steps_per_task": [
         3,
@@ -112,11 +112,11 @@
           800
         ]
       },
-      "review_min_per_day": 20,
+      "review_min_per_day": 10,
       "baseline_wage_assumption": {
         "inr_per_hour": [
-          100,
-          180
+          200,
+          200
         ],
         "note": "billing clerk / store staff"
       },
@@ -139,8 +139,8 @@
       "name_hi": "कैटलॉग सपोर्ट",
       "does": "Answers customer questions about products, prices, sizes and availability from your catalog, and hands off to you when unsure.",
       "setup_hours": [
-        5,
-        6
+        5.5,
+        5.5
       ],
       "steps_per_task": [
         2,
@@ -156,11 +156,11 @@
           400
         ]
       },
-      "review_min_per_day": 15,
+      "review_min_per_day": 10,
       "baseline_wage_assumption": {
         "inr_per_hour": [
-          100,
-          180
+          200,
+          200
         ],
         "note": "counter / phone staff"
       },
@@ -183,8 +183,8 @@
       "name_hi": "रिपोर्ट बनाना",
       "does": "Pulls your daily or weekly sales, stock or ledger data and writes a short summary with the numbers that changed.",
       "setup_hours": [
-        5,
-        6
+        5.5,
+        5.5
       ],
       "steps_per_task": [
         2,
@@ -203,8 +203,8 @@
       "review_min_per_day": 10,
       "baseline_wage_assumption": {
         "inr_per_hour": [
-          150,
-          300
+          200,
+          200
         ],
         "note": "accountant / manager time"
       },
@@ -227,8 +227,8 @@
       "name_hi": "कंटेंट पाइपलाइन",
       "does": "Drafts product posts, captions and descriptions from your photos and notes, queued for your approval before posting.",
       "setup_hours": [
-        8,
-        10
+        5.5,
+        5.5
       ],
       "steps_per_task": [
         2,
@@ -244,11 +244,11 @@
           1500
         ]
       },
-      "review_min_per_day": 15,
+      "review_min_per_day": 10,
       "baseline_wage_assumption": {
         "inr_per_hour": [
-          150,
-          300
+          200,
+          200
         ],
         "note": "marketing freelancer / owner time"
       },

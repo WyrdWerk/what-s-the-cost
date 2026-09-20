@@ -62,8 +62,8 @@ button[disabled] { opacity: 0.5; cursor: not-allowed; }
 /* Model tier switch on the receipt: three pinned TokenWatch models, recomputes live. */
 .receipt .tier { padding: 10px 0 6px; border-bottom: 1px dashed var(--line); }
 .receipt .tier .k { font-weight: 600; margin-bottom: 6px; }
-.receipt .tier .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
-.receipt .tier .seg button { background: none; border: none; padding: 8px 14px; font: inherit; font-size: 0.95rem; cursor: pointer; min-height: 44px; }
+.receipt .tier .seg { display: flex; width: 100%; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
+.receipt .tier .seg button { flex: 1; min-width: 0; background: none; border: none; padding: 8px 6px; font: inherit; font-size: 0.95rem; cursor: pointer; min-height: 44px; }
 .receipt .tier .seg button[aria-checked="true"] { background: var(--ink); color: #fff; }
 .receipt .tier small { display: block; color: var(--muted); font-size: 0.85rem; margin-top: 6px; }
 
