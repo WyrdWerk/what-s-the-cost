@@ -410,7 +410,7 @@ curl -s -X POST https://agentcost.wyrdwerk.com/api/estimate -H 'content-type: ap
   and can change it.
 - **`language` from the classifier is informational**; the UI language follows the toggle.
 - No PDF export, WhatsApp integration, or voice — deliberately out of scope.
-- The service worker version string (`ckh-v6` in `sw.js`) must be bumped when cached files change
+- The service worker version string (`ckh-v7` in `sw.js`) must be bumped when cached files change
   in ways that matter offline.
 
 ## 15. Decision log
@@ -430,4 +430,5 @@ curl -s -X POST https://agentcost.wyrdwerk.com/api/estimate -H 'content-type: ap
 | 2026-09-20 | Chip tap skips model; typed text with no chip calls it | Explicit beats inferred |
 | 2026-09-20 | Schema `minimum`/`maximum` removed; bounds in validator | Anthropic structured-output dialect rejects them |
 | 2026-09-20 | Git-connected Pages over CLI deploy | No token needed; auto-deploy on push |
+| 2026-09-20 | UI title renamed "Cost Kitna Hoga?" → "What's the cost?"; TokenWatch link added to header | Founder instruction |
 | 2026-09-20 | Subdomain `agentcost.wyrdwerk.com` | Founder choice over `kitna`/`cost`/`estimate` |

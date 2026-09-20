@@ -1,4 +1,4 @@
-/* Cost Kitna Hoga — client. Vanilla JS, no build step.
+/* What's the cost? — client. Vanilla JS, no build step.
    Manual mode is the product; the AI classifier (POST /api/estimate) is layered on top and may return null. */
 (function () {
   "use strict";
@@ -6,7 +6,7 @@
   // ---------- i18n ----------
   const STR = {
     en: {
-      title: "Cost Kitna Hoga?",
+      title: "What's the cost?",
       lead: "Describe one repetitive job in your business. Hindi or English.",
       descPlaceholder: "e.g. Every day I send 20 quotations on WhatsApp and then chase replies",
       chipsHint: "Or tap the closest match:",
@@ -37,7 +37,7 @@
       aiThinking: "Reading your description…", aiFallback: "Couldn't read that automatically — tap the closest match below.",
     },
     hi: {
-      title: "Cost Kitna Hoga?",
+      title: "What's the cost?",
       lead: "अपने बिज़नेस का एक बार-बार होने वाला काम बताइए। हिन्दी या English।",
       descPlaceholder: "जैसे: रोज़ 20 कोटेशन WhatsApp पर भेजता हूँ, फिर जवाब के लिए फॉलो-अप",
       chipsHint: "या सबसे नज़दीकी काम चुनिए:",

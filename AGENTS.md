@@ -104,7 +104,7 @@ Repo: https://github.com/WyrdWerk/what-s-the-cost (public — no secrets, no cli
 
 ## Founder's vocabulary and positioning
 
-- Product name in UI: **Cost Kitna Hoga?** Repo/domain: *what-s-the-cost* / *agentcost*.
+- Product name in UI: **What's the cost?** (was "Cost Kitna Hoga?" until 2026-09-20; the Hindi UI keeps the English name). Repo/domain: *what-s-the-cost* / *agentcost*.
 - Verdicts are exactly: *Worth an agent* · *Assist first — try a simpler tool* · *Leave it alone*.
 - Footer lines are fixed copy: *"Estimate, not a quote. Real price depends on the factors above."*
   and *"We do not save your workflow in an application database. AI mode sends it to Anthropic;
