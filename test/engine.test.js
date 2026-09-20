@@ -87,3 +87,23 @@ const arch = {
   console.log("per-million unit check ✓");
 }
 console.log("all engine tests passed");
+
+// Case F (model tiers): same inputs as Case A, but pricing comes from run_models + tier.
+// cheap = ×1 of the legacy price, frontier = ×10. Paper: run(frontier) = 10 × 174.72 = ₹1747.20.
+// Unknown tier → default_tier; missing run_models → legacy run_model.
+{
+  const tiered = {
+    ...cfg, run_model: undefined, default_tier: "cheap",
+    run_models: {
+      cheap: { id: "cheap-m", input_usd_per_million: 1.0, output_usd_per_million: 5.0 },
+      frontier: { id: "frontier-m", input_usd_per_million: 10.0, output_usd_per_million: 50.0 },
+    },
+  };
+  const ans = { tasks_per_day: 20, minutes_per_task: 20, current_handling: "staff" };
+  assert.equal(Engine.estimate(arch, tiered, { ...ans, model_tier: "frontier" }).run[1].toFixed(2), "1747.20");
+  assert.equal(Engine.estimate(arch, tiered, { ...ans, model_tier: "cheap" }).run[1].toFixed(2), "174.72");
+  assert.equal(Engine.estimate(arch, tiered, ans).assumptions.run_model.id, "cheap-m");           // default tier
+  assert.equal(Engine.estimate(arch, tiered, { ...ans, model_tier: "nope" }).assumptions.run_model.id, "cheap-m");
+  assert.equal(Engine.estimate(arch, cfg, ans).assumptions.run_model.id, "test-model");           // legacy shape
+  console.log("Case F ok: tiers");
+}

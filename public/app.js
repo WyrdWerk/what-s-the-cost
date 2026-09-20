@@ -28,6 +28,8 @@
       foot2: "We do not save your workflow in an application database. AI mode sends it to Anthropic; their retention policies apply.",
       cta: "Talk to WyrdWerk → contact@wyrdwerk.com",
       perMonth: "/mo", examples: "Try an example:",
+      tierLabel: "Which model runs the agent?", tierSub: "{model} · intelligence {iq} · ${pin}/{pout} per M tokens",
+      tiers: { cheap: "Cheap", balanced: "Balanced", frontier: "Frontier" },
       aiThinking: "Reading your description…", aiFallback: "Couldn't read that automatically — tap the closest match below.",
     },
     hi: {
@@ -53,9 +55,12 @@
       foot2: "हम आपका वर्कफ़्लो किसी एप्लिकेशन डेटाबेस में नहीं रखते। AI मोड इसे Anthropic को भेजता है; उनकी रिटेंशन नीतियाँ लागू होती हैं।",
       cta: "WyrdWerk से बात करें → contact@wyrdwerk.com",
       perMonth: "/महीना", examples: "उदाहरण देखें:",
+      tierLabel: "एजेंट कौन-सा मॉडल चलाएगा?", tierSub: "{model} · इंटेलिजेंस {iq} · ${pin}/{pout} प्रति M टोकन",
+      tiers: { cheap: "सस्ता", balanced: "संतुलित", frontier: "सबसे तेज़" },
       aiThinking: "आपका विवरण पढ़ रहे हैं…", aiFallback: "अपने आप समझ नहीं आया — नीचे सबसे नज़दीकी काम चुनिए।",
     },
   };
+  const TIERS = ["cheap", "balanced", "frontier"];
   const TAPS = {
     tasks_per_day: [1, 5, 10, 20, 50, 100],
     minutes_per_task: [2, 5, 10, 20, 30],
@@ -73,6 +78,7 @@
     archetype_id: null,
     source: "manual", // "manual" | "ai" | "shared"
     answers: { tasks_per_day: null, current_handling: null, minutes_per_task: null },
+    model_tier: null, // "cheap" | "balanced" | "frontier"; null → config.default_tier
     frozen: null, // { archetype, config } snapshot embedded in share links
   };
   let DATA = { archetypes: [], config: null };
@@ -182,10 +188,29 @@
     d.append(kk, vv); return d;
   }
 
+  // Model tier: three pinned models from TokenWatch; switching recomputes the receipt live.
+  function tierSwitch(cfg, tier, s) {
+    const wrap = document.createElement("div"); wrap.className = "tier";
+    const lab = document.createElement("div"); lab.className = "k"; lab.textContent = s.tierLabel;
+    const seg = document.createElement("div"); seg.className = "seg";
+    TIERS.filter((k) => cfg.run_models && cfg.run_models[k]).forEach((k) => {
+      const b = document.createElement("button"); b.type = "button"; b.textContent = s.tiers[k];
+      b.setAttribute("aria-pressed", String(k === tier));
+      b.onclick = () => { state.model_tier = k; renderReceipt(); location.hash = encodeState(); };
+      seg.appendChild(b);
+    });
+    const m = Engine.resolveModel(cfg, tier);
+    const sub = document.createElement("small");
+    sub.textContent = fmt(s.tierSub, { model: m.display_name || m.id, iq: m.intelligence_index ?? "—", pin: m.input_usd_per_million, pout: m.output_usd_per_million });
+    wrap.append(lab, seg, sub); return wrap;
+  }
+
   function renderReceipt() {
     const a = state.frozen ? state.frozen.archetype : archetypeById(state.archetype_id);
     const cfg = state.frozen ? state.frozen.config : DATA.config;
-    const res = Engine.estimate(a, cfg, state.answers);
+    const tier = TIERS.includes(state.model_tier) ? state.model_tier : cfg.default_tier;
+    const model = Engine.resolveModel(cfg, tier);
+    const res = Engine.estimate(a, cfg, { ...state.answers, model_tier: tier });
     const s = t();
     const box = $("#receipt");
     box.replaceChildren();
@@ -196,7 +221,8 @@
     box.append(h, sub);
 
     box.appendChild(line(s.setup, rangeInr(res.setup)));
-    box.appendChild(line(s.run, rangeInr(res.run) + s.perMonth, fmt(s.runSub, { model: cfg.run_model.display_name || cfg.run_model.id })));
+    box.appendChild(tierSwitch(cfg, tier, s));
+    box.appendChild(line(s.run, rangeInr(res.run) + s.perMonth, fmt(s.runSub, { model: model.display_name || model.id })));
     box.appendChild(line(s.oversight, rangeInr(res.oversight) + s.perMonth, fmt(s.oversightSub, { hours: r1(res.oversightHours) })));
     box.appendChild(line(s.baseline, rangeInr(res.baseline) + s.perMonth,
       fmt(s.baselineSub, { hours: r1(res.baselineHours), wage: rangeInr(res.assumptions.wage_used_inr_per_hour) })));
@@ -224,7 +250,7 @@
 
     const foot = document.createElement("div"); foot.className = "foot";
     const p0 = document.createElement("p");
-    p0.textContent = fmt(s.assumptions, { days: cfg.working_days_per_month, fx: cfg.usd_to_inr, date: cfg.run_model.pricing_snapshot_date || "—" });
+    p0.textContent = fmt(s.assumptions, { days: cfg.working_days_per_month, fx: cfg.usd_to_inr, date: model.pricing_snapshot_date || "—" });
     const p1 = document.createElement("p"); p1.textContent = s.foot1;
     const p2 = document.createElement("p"); p2.textContent = s.foot2;
     const cta = document.createElement("a"); cta.className = "cta"; cta.href = "mailto:contact@wyrdwerk.com"; cta.textContent = s.cta;
@@ -245,6 +271,7 @@
     const payload = {
       v: 1, language: state.language, description: state.description.slice(0, 500),
       archetype_id: state.archetype_id, source: state.source, answers: state.answers,
+      model_tier: state.model_tier,
       frozen: state.frozen || { archetype: a, config: DATA.config },
     };
     const bytes = new TextEncoder().encode(JSON.stringify(payload));
@@ -268,7 +295,8 @@
         || !Number.isFinite(fa.review_min_per_day) || !isFiniteRange(fa.baseline_wage_assumption?.inr_per_hour)
         || !Number.isFinite(fc.working_days_per_month) || !Number.isFinite(fc.usd_to_inr)
         || !isFiniteRange(fc.owner_hourly_value_inr) || !isFiniteRange(fc.setup_hourly_rate_inr)
-        || !fc.run_model || !Number.isFinite(fc.run_model.input_usd_per_million) || !Number.isFinite(fc.run_model.output_usd_per_million)) return null;
+        || !isPricedModelSet(fc)) return null;
+      if (p.model_tier != null && !TIERS.includes(p.model_tier)) return null;
       fa.name_en = String(fa.name_en || ""); fa.name_hi = String(fa.name_hi || "");
       fa.price_drivers = Array.isArray(fa.price_drivers) ? fa.price_drivers.slice(0, 3).map(String) : [];
       fa.when_not_worth_it = String(fa.when_not_worth_it || ""); fa.when_not_worth_it_hi = String(fa.when_not_worth_it_hi || "");
@@ -276,6 +304,11 @@
       return p;
     } catch { return null; }
   }
+  const isPricedModel = (m) => m && Number.isFinite(m.input_usd_per_million) && Number.isFinite(m.output_usd_per_million);
+  // Accepts current {run_models, default_tier} or the legacy single run_model shape (v1 links from before tiers).
+  const isPricedModelSet = (fc) => fc.run_models
+    ? Object.values(fc.run_models).length > 0 && Object.values(fc.run_models).every(isPricedModel) && TIERS.includes(fc.default_tier)
+    : isPricedModel(fc.run_model);
   const isFiniteRange = (r) => Array.isArray(r) && r.length === 2 && r.every(Number.isFinite);
 
   // ---------- AI classification (layer 2; null = silently stay manual) ----------
@@ -327,7 +360,7 @@
     $("#toReceipt").onclick = () => { state.frozen = null; renderReceipt(); show("#screen-receipt"); location.hash = encodeState(); };
     $("#startOver").onclick = () => {
       history.replaceState(null, "", location.pathname);
-      state.archetype_id = null; state.frozen = null; state.source = "manual";
+      state.archetype_id = null; state.frozen = null; state.source = "manual"; state.model_tier = null;
       state.answers = { tasks_per_day: null, current_handling: null, minutes_per_task: null };
       $("#description").value = ""; applyI18n(); show("#screen-describe");
     };
@@ -339,7 +372,8 @@
     const shared = location.hash.length > 1 ? decodeState(location.hash.slice(1)) : null;
     if (shared) {
       Object.assign(state, { language: shared.language, description: shared.description, archetype_id: shared.frozen.archetype.id,
-        source: ["ai", "canned", "manual"].includes(shared.source) ? shared.source : "shared", answers: shared.answers, frozen: shared.frozen });
+        source: ["ai", "canned", "manual"].includes(shared.source) ? shared.source : "shared", answers: shared.answers, frozen: shared.frozen,
+        model_tier: shared.model_tier || null });
       applyI18n(); renderReceipt(); show("#screen-receipt");
     } else {
       applyI18n(); show("#screen-describe");

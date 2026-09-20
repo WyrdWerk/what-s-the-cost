@@ -54,3 +54,11 @@ button[disabled] { opacity: 0.5; cursor: not-allowed; }
 .receipt .foot p { margin: 6px 0; }
 .receipt .cta { display: inline-block; margin-top: 8px; color: var(--accent); font-weight: 600; }
 .chip.example { border-style: dashed; background: transparent; }
+
+/* Model tier switch on the receipt: three pinned TokenWatch models, recomputes live. */
+.receipt .tier { padding: 10px 0 6px; border-bottom: 1px dashed var(--line); }
+.receipt .tier .k { font-weight: 600; margin-bottom: 6px; }
+.receipt .tier .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
+.receipt .tier .seg button { background: none; border: none; padding: 8px 14px; font: inherit; font-size: 0.95rem; cursor: pointer; min-height: 40px; }
+.receipt .tier .seg button[aria-pressed="true"] { background: var(--ink); color: #fff; }
+.receipt .tier small { display: block; color: var(--muted); font-size: 0.85rem; margin-top: 6px; }

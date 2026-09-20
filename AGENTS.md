@@ -48,7 +48,7 @@ Repo: https://github.com/WyrdWerk/what-s-the-cost (public — no secrets, no cli
 | `public/index.html` | three screens, `data-i18n` hooks | adding a UI element (add its string to both `STR.en` and `STR.hi`) |
 | `public/style.css` | receipt-as-bill look, ≥44 px tap targets | styling |
 | `public/sw.js` | offline precache list and strategy | adding a static file the app needs offline (add to `SHELL`, bump `VERSION`) |
-| `public/data/config.json` | constants, pinned model pricing, FX | founder tunes numbers |
+| `public/data/config.json` | constants, three pinned model tiers (`run_models`, `default_tier`), FX | founder tunes numbers; tier prices come from TokenWatch, USD per million |
 | `public/data/archetypes.json` | six job types | founder tunes numbers; adding an id also requires the enum in `estimate.js` |
 | `public/data/scenarios.json` | five demo presets + keyword fallback | changing demos |
 | `functions/api/estimate.js` | classifier Function | prompt, schema, validation, timeout |

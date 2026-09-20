@@ -1,17 +1,44 @@
 {
-  "_status": "DRAFT constants. run_model pinned from TokenWatch on 2026-09-20 per founder instruction; owner/setup hourly values are implementer drafts awaiting founder review. All values are disclosed on the receipt.",
+  "_status": "DRAFT constants. run_models tiers pinned from TokenWatch on 2026-09-20 (first-party provider rows, USD per million tokens); owner/setup hourly values are implementer drafts awaiting founder review. All values are disclosed on the receipt.",
   "working_days_per_month": 26,
   "owner_hourly_value_inr": [500, 1000],
   "setup_hourly_rate_inr": [1200, 2500],
   "usd_to_inr": 96,
   "usd_to_inr_source": "frankfurter.dev 2026-09-18 (95.88) / open.er-api.com 2026-09-20 (95.94), rounded",
-  "run_model": {
-    "id": "anthropic/claude-fable-5.1",
-    "display_name": "Claude Fable 5.1",
-    "provider": "anthropic",
-    "input_usd_per_million": 10,
-    "output_usd_per_million": 50,
-    "pricing_snapshot_date": "2026-09-20",
-    "pricing_source": "https://tokenwatch.wyrdwerk.com/api/v1/models/claude-fable-5.1/providers (provider=anthropic; USD per million tokens)"
+  "default_tier": "balanced",
+  "run_models": {
+    "cheap": {
+      "id": "google/gemini-3.8-flash",
+      "display_name": "Gemini 3.8 Flash",
+      "provider": "google",
+      "input_usd_per_million": 0.375,
+      "output_usd_per_million": 1.875,
+      "intelligence_index": 40.9,
+      "agentic_index": 40.2,
+      "pricing_snapshot_date": "2026-09-20",
+      "pricing_source": "https://tokenwatch.wyrdwerk.com/api/v1/models/gemini-3.8-flash/providers (provider=google)"
+    },
+    "balanced": {
+      "id": "anthropic/claude-sonnet-5",
+      "display_name": "Claude Sonnet 5",
+      "provider": "anthropic",
+      "input_usd_per_million": 2,
+      "output_usd_per_million": 10,
+      "intelligence_index": 38.2,
+      "agentic_index": 43.6,
+      "pricing_snapshot_date": "2026-09-20",
+      "pricing_source": "https://tokenwatch.wyrdwerk.com/api/v1/models/claude-sonnet-5/providers (first-party price $2/$10)"
+    },
+    "frontier": {
+      "id": "anthropic/claude-fable-5.1",
+      "display_name": "Claude Fable 5.1",
+      "provider": "anthropic",
+      "input_usd_per_million": 10,
+      "output_usd_per_million": 50,
+      "intelligence_index": 53.4,
+      "agentic_index": 57.9,
+      "pricing_snapshot_date": "2026-09-20",
+      "pricing_source": "https://tokenwatch.wyrdwerk.com/api/v1/models/claude-fable-5.1/providers (provider=anthropic)"
+    }
   }
 }

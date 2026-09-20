@@ -60,7 +60,8 @@ A weak match is never dressed up as a confident verdict.
 | Line | What it is |
 |---|---|
 | Agent setup (one time) | Range in ₹ |
-| Monthly run cost | Model usage, naming the pinned model |
+| Which model runs the agent? | Three-way switch **Cheap / Balanced / Frontier**; each is one pinned TokenWatch model. Switching recomputes the receipt live and is saved in the share link |
+| Monthly run cost | Model usage on the selected tier's model |
 | Your oversight time | Hours/month **and** ₹/month, shown separately |
 | What this job costs you today | Baseline: hours/month × imputed wage |
 | Monthly saving | Conservative interval (see §4) |
@@ -176,14 +177,24 @@ how trustworthy its numbers are.
 | `owner_hourly_value_inr` | `[lo, hi]` ₹/hr for the owner's time (oversight, and baseline when "me") | [500, 1000] *(draft)* |
 | `setup_hourly_rate_inr` | `[lo, hi]` ₹/hr for build labour | [1200, 2500] *(draft)* |
 | `usd_to_inr` | pinned FX rate | 96 (frankfurter/er-api, 2026-09-20) |
-| `run_model.id` / `display_name` | the ONE representative model whose prices drive run cost | `anthropic/claude-fable-5.1` |
-| `run_model.input_usd_per_million` / `output_usd_per_million` | USD per **million** tokens | 10 / 50 |
-| `run_model.pricing_snapshot_date` | shown on the receipt | 2026-09-20 |
-| `run_model.pricing_source` | TokenWatch endpoint the snapshot came from | see file |
+| `default_tier` | tier used until the user taps another | `balanced` |
+| `run_models.<tier>.id` / `display_name` | one pinned model per tier (`cheap`, `balanced`, `frontier`) | see below |
+| `run_models.<tier>.input_usd_per_million` / `output_usd_per_million` | USD per **million** tokens | see below |
+| `run_models.<tier>.intelligence_index` / `agentic_index` | TokenWatch benchmark indices, shown under the switch | see below |
+| `run_models.<tier>.pricing_snapshot_date` / `pricing_source` | shown on the receipt / the TokenWatch lookup used | 2026-09-20 |
 
-> The run model is a **founder decision** (2026-09-20: pin Fable 5.1 from TokenWatch). It is not
-> the same thing as the classifier model, though it currently happens to be the same family.
-> Swapping to a cheaper model is a two-line edit here and materially changes verdicts.
+Tiers pinned on 2026-09-20 from TokenWatch first-party provider rows:
+
+| Tier | Model | $/M in | $/M out | Intelligence | Agentic |
+|---|---|---|---|---|---|
+| cheap | `google/gemini-3.8-flash` | 0.375 | 1.875 | 40.9 | 40.2 |
+| balanced | `anthropic/claude-sonnet-5` | 2 | 10 | 38.2 | 43.6 |
+| frontier | `anthropic/claude-fable-5.1` | 10 | 50 | 53.4 | 57.9 |
+
+> The tier models are a **founder decision** (2026-09-20: dynamic choice, three fixed tiers sourced
+> from TokenWatch). The run model is not the classifier model. Editing a tier's prices is a two-line
+> edit here and materially changes verdicts; keep `pricing_snapshot_date` honest when you do.
+> The engine still accepts the legacy single `run_model` shape so old share links keep working.
 
 ### `archetypes.json` — the six job types
 
@@ -372,7 +383,7 @@ curl -s -X POST https://agentcost.wyrdwerk.com/api/estimate -H 'content-type: ap
 │   ├── sw.js                  # offline cache
 │   └── data/
 │       ├── archetypes.json    # six job types — founder's numbers
-│       ├── config.json        # constants, pinned model pricing, FX
+│       ├── config.json        # constants, three pinned model tiers, FX
 │       └── scenarios.json     # five canned presets / demo cases
 └── test/
     └── engine.test.js         # hand-verified engine cases
@@ -382,17 +393,19 @@ curl -s -X POST https://agentcost.wyrdwerk.com/api/estimate -H 'content-type: ap
 
 - **Numbers are drafts.** `archetypes.json` and the owner/setup rates in `config.json` are
   implementer estimates pending founder review.
-- **Run model pricing is Fable 5.1** ($10/$50 per M) by founder decision. At these prices most
-  staff-performed jobs land on *Assist first*, which is honest but conservative; a cheaper model
-  changes verdicts materially.
+- **Model choice is three fixed tiers**, not a benchmark-driven suggestion per archetype. TokenWatch
+  supports `GET /api/v1/models?benchmarked=true&min_intelligence=N&sort=input&limit=10`, so a
+  "suggested cheapest model that clears this archetype's benchmark floor" is a natural next step
+  (skip `:batch` rows and quantized third-party offers).
 - **Live TokenWatch refresh is not implemented.** The receipt shows a dated pricing snapshot. If
-  added, use the fixed lookup `GET https://tokenwatch.wyrdwerk.com/api/v1/models/claude-fable-5.1/providers`
-  (4 rows), never the full catalog, and keep the snapshot as fallback labelled "saved pricing snapshot".
+  added, use the fixed per-model lookup `GET https://tokenwatch.wyrdwerk.com/api/v1/models/<id>/providers`
+  for the three tier ids only, never the full catalog, and keep the snapshot as fallback labelled
+  "saved pricing snapshot".
 - **Model-inferred counts snap to the tap grid**; a user who says "30 a day" sees 20 preselected
   and can change it.
 - **`language` from the classifier is informational**; the UI language follows the toggle.
 - No PDF export, WhatsApp integration, or voice — deliberately out of scope.
-- The service worker version string (`ckh-v1` in `sw.js`) must be bumped when cached files change
+- The service worker version string (`ckh-v2` in `sw.js`) must be bumped when cached files change
   in ways that matter offline.
 
 ## 15. Decision log
@@ -401,6 +414,7 @@ curl -s -X POST https://agentcost.wyrdwerk.com/api/estimate -H 'content-type: ap
 |---|---|---|
 | 2026-09-20 | Cloudflare Pages + one Function, vanilla JS, no build | Hackathon speed; zero-dependency deploy |
 | 2026-09-20 | Run model pinned to `claude-fable-5.1` from TokenWatch | Founder instruction; "modify later" |
+| 2026-09-20 | Superseded: three model tiers (Gemini 3.8 Flash / Sonnet 5 / Fable 5.1) chosen on the receipt, default `balanced` | Founder chose "fixed tiers" over benchmark-suggested model; ~130× price spread made a single pinned model misleading |
 | 2026-09-20 | FX pinned ₹96/$ | frankfurter 95.88 (09-18), er-api 95.94 (09-20), rounded |
 | 2026-09-20 | `current_handling = "nobody"` ⇒ baseline ₹0 | No time is currently spent; agent cannot "save" it |
 | 2026-09-20 | Setup cost = hours × config hourly rate | One constant to tune instead of six ranges |

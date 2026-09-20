@@ -23,12 +23,18 @@
   /**
    * @param {object} a   archetype entry from archetypes.json
    * @param {object} cfg config.json
-   * @param {object} ans { tasks_per_day, minutes_per_task, current_handling: "me"|"staff"|"nobody" }
+   * @param {object} ans { tasks_per_day, minutes_per_task, current_handling: "me"|"staff"|"nobody", model_tier?: "cheap"|"balanced"|"frontier" }
    */
+  function resolveModel(cfg, tier) {
+    const tiers = cfg.run_models || {};
+    return tiers[tier] || tiers[cfg.default_tier] || cfg.run_model;
+  }
+
   function estimate(a, cfg, ans) {
     const days = cfg.working_days_per_month;
     const tasks = ans.tasks_per_day;
     const minutes = ans.minutes_per_task;
+    const model = resolveModel(cfg, ans.model_tier);
 
     // Setup (one time) = hours × hourly rate, interval × interval.
     const setup = range(
@@ -39,11 +45,11 @@
     // Monthly run = tasks × days × steps × tokens × price, input/output kept separate.
     const perStepLow = tokenCostInrPerStep(
       { input: a.tokens_per_step.input[0], output: a.tokens_per_step.output[0] },
-      cfg.run_model, cfg.usd_to_inr
+      model, cfg.usd_to_inr
     );
     const perStepHigh = tokenCostInrPerStep(
       { input: a.tokens_per_step.input[1], output: a.tokens_per_step.output[1] },
-      cfg.run_model, cfg.usd_to_inr
+      model, cfg.usd_to_inr
     );
     const run = range(
       tasks * days * a.steps_per_task[0] * perStepLow,
@@ -97,7 +103,8 @@
       assumptions: {
         working_days_per_month: days,
         usd_to_inr: cfg.usd_to_inr,
-        run_model: cfg.run_model,
+        run_model: model,
+        model_tier: ans.model_tier || cfg.default_tier || null,
         owner_hourly_value_inr: cfg.owner_hourly_value_inr,
         setup_hourly_rate_inr: cfg.setup_hourly_rate_inr,
         wage_used_inr_per_hour: wage,
@@ -105,5 +112,5 @@
     };
   }
 
-  return { estimate, WORTH_IT_MAX_MONTHS };
+  return { estimate, resolveModel, WORTH_IT_MAX_MONTHS };
 });
