@@ -1,4 +1,4 @@
-// Cost Kitna Hoga — deterministic, range-preserving budget engine.
+// What's the cost? — deterministic, range-preserving budget engine.
 // Pure functions only. No IO. Every output is a [low, high] pair in INR unless noted.
 // Loaded both in the browser (window.Engine) and in Node tests (module.exports).
 
@@ -30,11 +30,46 @@
     return tiers[tier] || tiers[cfg.default_tier] || cfg.run_model;
   }
 
-  function estimate(a, cfg, ans) {
+  // ---- Input contract (throws RangeError). Share links and tests can feed arbitrary JSON; the engine must never
+  // return NaN/Infinity/negative rupees with a verdict attached. Bounds are generous sanity caps, not tuning.
+  const MAX_SCALAR = 1e9;
+  const isNum = (x, max) => typeof x === "number" && Number.isFinite(x) && x >= 0 && x <= (max || MAX_SCALAR);
+  function num(x, what, max) { if (!isNum(x, max)) throw new RangeError("engine: " + what + " must be a finite number in [0, " + (max || MAX_SCALAR) + "]"); return x; }
+  function rng(r, what, max) {
+    if (!Array.isArray(r) || r.length !== 2) throw new RangeError("engine: " + what + " must be a [low, high] pair");
+    return range(num(r[0], what + "[0]", max), num(r[1], what + "[1]", max));
+  }
+  function pricedModel(m, what) {
+    if (!m || typeof m !== "object") throw new RangeError("engine: " + what + " missing");
+    num(m.input_usd_per_million, what + ".input_usd_per_million", 1e5); num(m.output_usd_per_million, what + ".output_usd_per_million", 1e5);
+    return m;
+  }
+  const HANDLING = ["me", "staff", "nobody"];
+
+  function estimate(a0, cfg0, ans) {
+    if (!a0 || !cfg0 || !ans) throw new RangeError("engine: archetype, config and answers are required");
+    // Normalised copies: every interval sorted, every scalar finite and non-negative.
+    const a = {
+      ...a0,
+      setup_hours: rng(a0.setup_hours, "setup_hours", 1e5),
+      steps_per_task: rng(a0.steps_per_task, "steps_per_task", 1e4),
+      tokens_per_step: { input: rng(a0.tokens_per_step && a0.tokens_per_step.input, "tokens_per_step.input", 1e7),
+                         output: rng(a0.tokens_per_step && a0.tokens_per_step.output, "tokens_per_step.output", 1e7) },
+      review_min_per_day: num(a0.review_min_per_day, "review_min_per_day", 1440),
+      baseline_wage_assumption: { inr_per_hour: rng(a0.baseline_wage_assumption && a0.baseline_wage_assumption.inr_per_hour, "baseline_wage_assumption.inr_per_hour", 1e6) },
+    };
+    const cfg = {
+      ...cfg0,
+      working_days_per_month: num(cfg0.working_days_per_month, "working_days_per_month", 31),
+      usd_to_inr: num(cfg0.usd_to_inr, "usd_to_inr", 1e4),
+      owner_hourly_value_inr: rng(cfg0.owner_hourly_value_inr, "owner_hourly_value_inr", 1e6),
+      setup_hourly_rate_inr: rng(cfg0.setup_hourly_rate_inr, "setup_hourly_rate_inr", 1e6),
+    };
     const days = cfg.working_days_per_month;
-    const tasks = ans.tasks_per_day;
-    const minutes = ans.minutes_per_task;
-    const model = resolveModel(cfg, ans.model_tier);
+    const tasks = num(ans.tasks_per_day, "tasks_per_day", 1e4);
+    const minutes = num(ans.minutes_per_task, "minutes_per_task", 1440);
+    if (!HANDLING.includes(ans.current_handling)) throw new RangeError("engine: current_handling must be me|staff|nobody");
+    const model = pricedModel(resolveModel(cfg, ans.model_tier), "run model");
 
     // Setup (one time) = hours × hourly rate, interval × interval.
     const setup = range(
@@ -96,6 +131,11 @@
     if (breakEven === "never") verdict = "leave_it";
     else if (breakEven === "assured" && payback[1] <= WORTH_IT_MAX_MONTHS) verdict = "worth_it";
     else verdict = "assist_first";
+
+    // Output contract: every interval finite and ordered.
+    [setup, run, oversight, baseline, [netLow, netHigh], payback || [0, 0]].forEach((r) => {
+      if (!r.every(Number.isFinite) || r[0] > r[1]) throw new RangeError("engine: produced a non-finite or unordered range");
+    });
 
     return {
       setup, run, oversight, oversightHours, baseline, baselineHours,

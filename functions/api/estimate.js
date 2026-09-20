@@ -6,6 +6,7 @@
 const MODEL = "claude-fable-5-1";
 const DEADLINE_MS = 12000;
 const MAX_DESCRIPTION_CHARS = 1000;
+const MAX_BODY_BYTES = 8192; // description ≤1000 chars (≤4 KB UTF-8) + language + 3 answers
 
 const ARCHETYPE_IDS = [
   "quotation_followup", "invoice_po_entry", "billing_inventory",
@@ -66,8 +67,15 @@ export async function onRequestPost(context) {
   const apiKey = context.env.ANTHROPIC_API_KEY;
   if (!apiKey) return json(null);
 
+  // Reject oversized bodies before parsing: header check first (cheap), then the decoded text (covers chunked bodies).
+  const declared = Number(context.request.headers.get("content-length"));
+  if (Number.isFinite(declared) && declared > MAX_BODY_BYTES) return json(null, 413);
   let body;
-  try { body = await context.request.json(); } catch { return json(null, 400); }
+  try {
+    const text = await context.request.text();
+    if (text.length > MAX_BODY_BYTES) return json(null, 413);
+    body = JSON.parse(text);
+  } catch { return json(null, 400); }
   const description = typeof body?.description === "string" ? body.description.trim().slice(0, MAX_DESCRIPTION_CHARS) : "";
   if (description.length < 3) return json(null, 400);
   const language = LANGUAGES.includes(body?.language) ? body.language : "en";

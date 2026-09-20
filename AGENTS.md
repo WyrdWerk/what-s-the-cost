@@ -117,6 +117,18 @@ Repo: https://github.com/WyrdWerk/what-s-the-cost (public — no secrets, no cli
   key) and prices are USD per **token** — convert ×1e6 once (`loadOpenRouter()`). Any new fetch
   origin must be added to `connect-src` in `public/_headers` and the SW `VERSION` bumped.
 
+## Engine and share-link contract (added after the 2026-09-20 red team)
+
+- `Engine.estimate` validates its inputs and throws `RangeError`; never catch-and-continue with a
+  partial result. Ranges are sorted on entry, so `[hi, lo]` inputs are legal.
+- `decodeState` in `app.js` rebuilds the frozen objects with known keys only and dry-runs the engine.
+  When adding a field to the share payload, add it to that allow-list or it will be dropped.
+- Every rupee figure renders through `rangeInr`, which always prints two bounds. Do not "tidy" equal
+  bounds into one number.
+- `/api/estimate` returns 413 above `MAX_BODY_BYTES` (8 KB) before parsing.
+- Open Cloudflare-side items owned by the founder: WAF rate-limiting rule on `POST /api/estimate`
+  (see README §14), zone Browser Cache TTL → Respect Existing Headers.
+
 ## When to stop and ask the founder
 
 - Changing any formula, threshold (9 months), or the conservative-interval rule.

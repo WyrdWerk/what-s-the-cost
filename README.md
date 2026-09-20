@@ -180,6 +180,7 @@ how trustworthy its numbers are.
 | `default_tier` | tier used until the user taps another | `balanced` |
 | `run_models.<tier>.id` / `display_name` | one pinned model per tier (`cheap`, `balanced`, `frontier`) | see below |
 | `run_models.<tier>.input_usd_per_million` / `output_usd_per_million` | USD per **million** tokens | see below |
+| *(engine contract)* | `Engine.estimate` throws `RangeError` for non-finite/negative/oversized inputs, unknown `current_handling`, or a missing priced model; input ranges are sorted before pairing; every output interval is asserted finite and ordered | — |
 | `run_models.<tier>.intelligence_index` / `agentic_index` | TokenWatch benchmark indices, shown under the switch | see below |
 | `run_models.<tier>.pricing_snapshot_date` / `pricing_source` | shown on the receipt / the TokenWatch lookup used | 2026-09-20 |
 
@@ -263,7 +264,7 @@ Built and deployed in this order; each layer works without the ones after it.
 2. **Model classification** — layered on the same flow. Any failure is silent to the user.
 3. **Canned scenarios** — keyword match on the description when the model returns `null`; also the
    demo chips.
-4. **Service worker** — `public/sw.js` precaches the shell and data files (`ckh-v1`), cache-first
+4. **Service worker** — `public/sw.js` precaches the shell and data files (version string `VERSION` in `sw.js`, currently `ckh-v8`), cache-first
    for same-origin GETs, never caches `/api/*`. **Acceptance test passed:** a *new* estimate was
    completed with the network off (page from cache → typed description → API unreachable → keyword
    match → receipt).
@@ -279,8 +280,13 @@ a link therefore:
 - never calls the model,
 - reproduces the same numbers even if `data/*.json` has since changed,
 - is Unicode-safe (UTF-8 → base64url) so Hindi survives,
-- is validated on decode (version, enums, finite ranges); anything malformed is ignored and the app
-  starts fresh,
+- is validated on decode: fragment ≤16 000 base64url chars (checked before `atob`), version, enums,
+  finite **non-negative ordered** ranges, all three tiers present, known keys only (frozen objects are
+  rebuilt field-by-field, so `__proto__`/unknown keys are dropped), string-length caps, and finally a
+  dry run through `Engine.estimate`, which throws `RangeError` on anything out of contract. Anything
+  malformed is ignored and the app starts fresh. Bounds do **not** authenticate a link: a shared
+  receipt with plausible numbers is still client-authored — treat shared links as "someone's estimate",
+  not WyrdWerk's,
 - renders every string via `textContent`, never `innerHTML`.
 
 The fragment is never sent to the server.
@@ -391,6 +397,21 @@ curl -s -X POST https://agentcost.wyrdwerk.com/api/estimate -H 'content-type: ap
 
 ## 14. Known limitations and roadmap
 
+**Open security items (Cloudflare dashboard, founder-owned):**
+
+- **No rate limit on `POST /api/estimate`.** Each call spends Anthropic credit (worst case ≈ $0.20
+  at `max_tokens` 4096 on Fable 5.1). Fix: WAF → Rate limiting rules → hostname
+  `agentcost.wyrdwerk.com` AND path `/api/estimate` AND method `POST`, per-IP, e.g. 10 req / 1 min,
+  action Block ([Cloudflare best practices](https://developers.cloudflare.com/waf/rate-limiting-rules/best-practices/)).
+  Backstop: monthly spend limit in the Anthropic console. If abuse continues, add
+  [Turnstile](https://developers.cloudflare.com/pages/functions/plugins/turnstile/) with
+  server-side validation before the paid fetch.
+- **Zone Browser Cache TTL (4 h) overrides `_headers` `max-age=0` on the custom domain.** Caching →
+  Configuration → Browser Cache TTL → *Respect Existing Headers*
+  ([docs](https://developers.cloudflare.com/cache/how-to/edge-browser-cache-ttl/)). Until then a
+  deploy can be stale for up to 4 h for returning visitors on `agentcost.wyrdwerk.com`.
+
+
 - **Numbers are drafts.** `archetypes.json` and the owner/setup rates in `config.json` are
   implementer estimates pending founder review.
 - **Model choice is three fixed tiers plus a manual search**, not a benchmark-driven suggestion per
@@ -410,7 +431,7 @@ curl -s -X POST https://agentcost.wyrdwerk.com/api/estimate -H 'content-type: ap
   and can change it.
 - **`language` from the classifier is informational**; the UI language follows the toggle.
 - No PDF export, WhatsApp integration, or voice — deliberately out of scope.
-- The service worker version string (`ckh-v7` in `sw.js`) must be bumped when cached files change
+- The service worker version string (`ckh-v8` in `sw.js`) must be bumped when cached files change
   in ways that matter offline.
 
 ## 15. Decision log
@@ -420,6 +441,7 @@ curl -s -X POST https://agentcost.wyrdwerk.com/api/estimate -H 'content-type: ap
 | 2026-09-20 | Cloudflare Pages + one Function, vanilla JS, no build | Hackathon speed; zero-dependency deploy |
 | 2026-09-20 | Run model pinned to `claude-fable-5.1` from TokenWatch | Founder instruction; "modify later" |
 | 2026-09-20 | `_headers`: CSP + JS `max-age=0`; single-choice groups use ARIA radiogroup/radio with arrow keys; 44 px targets everywhere | Measured 4 h JS cache on prod; APG radio pattern; WCAG 2.5.5 |
+| 2026-09-20 | Independent red-team pass ([thread](https://ampcode.com/threads/T-01a0be04-42fa-7675-b6ff-d6da2c7e64bc)) → engine input/output contract (`RangeError`), receipt always prints both bounds (even ₹0 – ₹0), share-link hardening, language arrow keys, 44 px tier/source buttons, TokenWatch search abort + 10-row cap, OpenRouter 5000-row cap, Function 413 above 8 KB | Findings #2–#8 of the report; #1 (rate limiting) and #5 (zone Browser Cache TTL) are Cloudflare-dashboard actions for the founder; #9 was a false positive (no U+FFFD in repo or prod) |
 | 2026-09-20 | "Other…" model search via TokenWatch (`?search=&limit=10`), no BYO API key | Founder asked for wider choice; pricing needs no key |
 | 2026-09-20 | OpenRouter added as a second "Other…" source, still no key field | Founder proposed a client-side OpenRouter key + picker; `/api/v1/models` is public so the key adds only privacy risk. Catalog (~739 KB) loads once, only on explicit source pick — accepted exception to "never fetch the catalog", flagged to founder |
 | 2026-09-20 | Superseded: three model tiers (Gemini 3.8 Flash / Sonnet 5 / Fable 5.1) chosen on the receipt, default `balanced` | Founder chose "fixed tiers" over benchmark-suggested model; ~130× price spread made a single pinned model misleading |

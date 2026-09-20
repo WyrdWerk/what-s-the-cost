@@ -81,7 +81,8 @@
   };
   const fmt = (s, vars) => s.replace(/\{(\w+)\}/g, (_, k) => (vars && k in vars ? vars[k] : ""));
   const inr = (n) => (n < 0 ? "−" : "") + "₹" + Math.abs(Math.round(n)).toLocaleString("en-IN");
-  const rangeInr = ([lo, hi]) => (Math.round(lo) === Math.round(hi) ? inr(lo) : inr(lo) + " – " + inr(hi));
+  // Always both bounds, even when equal (₹0 – ₹0): the product promise is "ranges, never point estimates".
+  const rangeInr = ([lo, hi]) => inr(lo) + " – " + inr(hi);
   const r1 = (n) => (Math.round(n * 10) / 10).toString();
 
   // ---------- state ----------
@@ -256,7 +257,7 @@
     if (!openrouterCatalog) {
       openrouterCatalog = fetch(OPENROUTER_MODELS, { signal: AbortSignal.timeout(10000) })
         .then((r) => { if (!r.ok) throw new Error(String(r.status)); return r.json(); })
-        .then((j) => (Array.isArray(j.data) ? j.data : []).map((m) => {
+        .then((j) => (Array.isArray(j.data) ? j.data.slice(0, 5000) : []).filter((m) => m && typeof m.id === "string" && m.pricing).map((m) => {
           // OpenRouter prices are USD PER TOKEN as strings; convert to USD per million once, here.
           const pin = Number(m?.pricing?.prompt) * 1e6, pout = Number(m?.pricing?.completion) * 1e6;
           return { id: m.id, name: m.name, provider: "openrouter", provider_display: "OpenRouter",
@@ -284,9 +285,10 @@
     const hint = document.createElement("small"); hint.textContent = src === "openrouter" ? s.orHint : s.searchHint;
     const list = document.createElement("div"); list.className = "twlist";
     const note = (txt) => { list.replaceChildren(); const e = document.createElement("small"); e.textContent = txt; list.appendChild(e); };
-    let timer = null, seq = 0;
+    let timer = null, seq = 0, inflight = null;
     inp.oninput = () => {
       clearTimeout(timer);
+      inflight?.abort(); inflight = null;
       const q = inp.value.trim();
       if (q.length < 2) { list.replaceChildren(); return; }
       timer = setTimeout(async () => {
@@ -300,14 +302,16 @@
             const nq = norm(q);
             rows = all.filter((m) => norm(m.id).includes(nq) || norm(m.name).includes(nq)).slice(0, 10);
           } else {
-            const r = await fetch(TOKENWATCH_SEARCH + encodeURIComponent(q), { signal: AbortSignal.timeout(6000) });
+            inflight = new AbortController();
+            const kill = setTimeout(() => inflight?.abort(), 6000);
+            const r = await fetch(TOKENWATCH_SEARCH + encodeURIComponent(q), { signal: inflight.signal }).finally(() => clearTimeout(kill));
             if (!r.ok) throw new Error(String(r.status));
             const j = await r.json();
             if (my !== seq) return;
-            rows = Array.isArray(j.models) ? j.models : [];
+            rows = (Array.isArray(j.models) ? j.models : []).slice(0, 10);
           }
           renderRows(rows);
-        } catch { if (my === seq) note(fmt(s.searchFail, { source: s.sources[src] })); }
+        } catch (err) { if (my === seq && err?.name !== "AbortError") note(fmt(s.searchFail, { source: s.sources[src] })); }
       }, 300);
     };
     function renderRows(rows) {
@@ -411,47 +415,68 @@
     let bin = ""; bytes.forEach((b) => (bin += String.fromCharCode(b)));
     return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
   }
+  const MAX_FRAGMENT_CHARS = 16000; // ours are ~4–5 KB; reject before atob/JSON.parse
   function decodeState(frag) {
     try {
+      if (typeof frag !== "string" || frag.length > MAX_FRAGMENT_CHARS || !/^[A-Za-z0-9_-]+$/.test(frag)) return null;
       const b64 = frag.replace(/-/g, "+").replace(/_/g, "/");
       const bin = atob(b64);
       const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0));
       const p = JSON.parse(new TextDecoder().decode(bytes));
-      if (p.v !== 1) return null;
+      if (!p || typeof p !== "object" || p.v !== 1) return null;
+      p.description = String(p.description || "").slice(0, 500);
       if (!["en", "hi"].includes(p.language)) return null;
       if (!TAPS.tasks_per_day.includes(p.answers?.tasks_per_day)) return null;
       if (!TAPS.minutes_per_task.includes(p.answers?.minutes_per_task)) return null;
       if (!TAPS.current_handling.includes(p.answers?.current_handling)) return null;
       const fa = p.frozen?.archetype, fc = p.frozen?.config;
-      if (!fa || !fc || typeof fa.id !== "string" || !isFiniteRange(fa.setup_hours) || !isFiniteRange(fa.steps_per_task)
+      if (!fa || !fc || typeof fa.id !== "string" || fa.id.length > 60 || !isFiniteRange(fa.setup_hours) || !isFiniteRange(fa.steps_per_task)
         || !isFiniteRange(fa.tokens_per_step?.input) || !isFiniteRange(fa.tokens_per_step?.output)
-        || !Number.isFinite(fa.review_min_per_day) || !isFiniteRange(fa.baseline_wage_assumption?.inr_per_hour)
-        || !Number.isFinite(fc.working_days_per_month) || !Number.isFinite(fc.usd_to_inr)
+        || !isNonNeg(fa.review_min_per_day) || !isFiniteRange(fa.baseline_wage_assumption?.inr_per_hour)
+        || !isNonNeg(fc.working_days_per_month) || !isNonNeg(fc.usd_to_inr)
         || !isFiniteRange(fc.owner_hourly_value_inr) || !isFiniteRange(fc.setup_hourly_rate_inr)
         || !isPricedModelSet(fc)) return null;
+      // Rebuild frozen objects with known keys only (drops __proto__/constructor/etc. and unknown fields).
+      p.frozen = {
+        archetype: { id: fa.id, name_en: fa.name_en, name_hi: fa.name_hi, setup_hours: fa.setup_hours, steps_per_task: fa.steps_per_task,
+          tokens_per_step: { input: fa.tokens_per_step.input, output: fa.tokens_per_step.output }, review_min_per_day: fa.review_min_per_day,
+          baseline_wage_assumption: { inr_per_hour: fa.baseline_wage_assumption.inr_per_hour },
+          price_drivers: fa.price_drivers, price_drivers_hi: fa.price_drivers_hi, when_not_worth_it: fa.when_not_worth_it, when_not_worth_it_hi: fa.when_not_worth_it_hi },
+        config: { working_days_per_month: fc.working_days_per_month, usd_to_inr: fc.usd_to_inr, owner_hourly_value_inr: fc.owner_hourly_value_inr,
+          setup_hourly_rate_inr: fc.setup_hourly_rate_inr, default_tier: fc.default_tier,
+          run_models: fc.run_models ? Object.fromEntries(["cheap", "balanced", "frontier"].map((k) => [k, pickModel(fc.run_models[k])])) : undefined,
+          run_model: fc.run_models ? undefined : pickModel(fc.run_model) },
+      };
       if (p.model_tier != null && !TIERS.includes(p.model_tier)) return null;
       if (p.model_tier === "custom") {
         const cm = p.custom_model;
         if (!isPricedModel(cm) || typeof cm.id !== "string") return null;
-        p.custom_model = { id: cm.id.slice(0, 80), display_name: String(cm.display_name || cm.id).slice(0, 60), provider: String(cm.provider || "").slice(0, 40),
-          input_usd_per_million: cm.input_usd_per_million, output_usd_per_million: cm.output_usd_per_million,
-          intelligence_index: Number.isFinite(cm.intelligence_index) ? cm.intelligence_index : null,
-          pricing_snapshot_date: String(cm.pricing_snapshot_date || "").slice(0, 10),
+        p.custom_model = { ...pickModel(cm), pricing_snapshot_date: String(cm.pricing_snapshot_date || "").slice(0, 10),
           pricing_source: SOURCES.includes(cm.pricing_source) ? cm.pricing_source : "tokenwatch" };
       } else p.custom_model = null;
-      fa.name_en = String(fa.name_en || ""); fa.name_hi = String(fa.name_hi || "");
-      fa.price_drivers = Array.isArray(fa.price_drivers) ? fa.price_drivers.slice(0, 3).map(String) : [];
-      fa.when_not_worth_it = String(fa.when_not_worth_it || ""); fa.when_not_worth_it_hi = String(fa.when_not_worth_it_hi || "");
-      fa.price_drivers_hi = Array.isArray(fa.price_drivers_hi) ? fa.price_drivers_hi.slice(0, 3).map(String) : null;
+      const A = p.frozen.archetype, str = (x, n) => String(x || "").slice(0, n);
+      A.name_en = str(A.name_en, 80); A.name_hi = str(A.name_hi, 80);
+      A.price_drivers = Array.isArray(A.price_drivers) ? A.price_drivers.slice(0, 3).map((x) => str(x, 200)) : [];
+      A.when_not_worth_it = str(A.when_not_worth_it, 300); A.when_not_worth_it_hi = str(A.when_not_worth_it_hi, 300);
+      A.price_drivers_hi = Array.isArray(A.price_drivers_hi) ? A.price_drivers_hi.slice(0, 3).map((x) => str(x, 200)) : null;
+      // Final gate: the engine itself must accept the frozen numbers (throws RangeError otherwise).
+      const cfgUsed = p.model_tier === "custom" ? { ...p.frozen.config, run_models: { ...p.frozen.config.run_models, custom: p.custom_model } } : p.frozen.config;
+      Engine.estimate(A, cfgUsed, { ...p.answers, model_tier: p.model_tier || undefined });
+      p.answers = { tasks_per_day: p.answers.tasks_per_day, minutes_per_task: p.answers.minutes_per_task, current_handling: p.answers.current_handling };
       return p;
     } catch { return null; }
   }
-  const isPricedModel = (m) => m && Number.isFinite(m.input_usd_per_million) && Number.isFinite(m.output_usd_per_million);
-  // Accepts current {run_models, default_tier} or the legacy single run_model shape (v1 links from before tiers).
+  const isNonNeg = (x) => typeof x === "number" && Number.isFinite(x) && x >= 0;
+  const isPricedModel = (m) => !!m && typeof m === "object" && typeof m.id === "string" && isNonNeg(m.input_usd_per_million) && isNonNeg(m.output_usd_per_million);
+  const pickModel = (m) => ({ id: m.id.slice(0, 80), display_name: String(m.display_name || m.id).slice(0, 60), provider: String(m.provider || "").slice(0, 40),
+    input_usd_per_million: m.input_usd_per_million, output_usd_per_million: m.output_usd_per_million,
+    intelligence_index: Number.isFinite(m.intelligence_index) ? m.intelligence_index : null,
+    pricing_snapshot_date: String(m.pricing_snapshot_date || "").slice(0, 10), pricing_source: String(m.pricing_source || "").slice(0, 40) });
+  // Accepts current {run_models, default_tier} (all three tiers required) or the legacy single run_model shape (v1 links from before tiers).
   const isPricedModelSet = (fc) => fc.run_models
-    ? Object.values(fc.run_models).length > 0 && Object.values(fc.run_models).every(isPricedModel) && ["cheap", "balanced", "frontier"].includes(fc.default_tier)
+    ? typeof fc.run_models === "object" && ["cheap", "balanced", "frontier"].every((k) => isPricedModel(fc.run_models[k])) && ["cheap", "balanced", "frontier"].includes(fc.default_tier)
     : isPricedModel(fc.run_model);
-  const isFiniteRange = (r) => Array.isArray(r) && r.length === 2 && r.every(Number.isFinite);
+  const isFiniteRange = (r) => Array.isArray(r) && r.length === 2 && r.every(isNonNeg) && r[0] <= r[1];
 
   // ---------- AI classification (layer 2; null = silently stay manual) ----------
   async function classify() {
@@ -474,7 +499,8 @@
   // ---------- wiring ----------
   async function init() {
     await loadData();
-    document.querySelectorAll(".lang button").forEach((b) => { b.onclick = () => { state.language = b.dataset.lang; applyI18n(); }; });
+    document.querySelectorAll(".lang button").forEach((b) => { b.onclick = () => { state.language = b.dataset.lang; applyI18n(); focusChecked($(".lang")); }; });
+    radioKeys($(".lang"));
     $("#description").oninput = (e) => { state.description = e.target.value; $("#aiStatus").textContent = ""; updateNext(); };
 
     $("#toQuestions").onclick = async () => {
@@ -511,7 +537,8 @@
       try { await navigator.clipboard.writeText(location.href); $("#copyLink").textContent = t().copied; setTimeout(applyI18n, 1500); } catch {}
     };
 
-    const shared = location.hash.length > 1 ? decodeState(location.hash.slice(1)) : null;
+    let shared = null;
+    try { shared = location.hash.length > 1 ? decodeState(location.hash.slice(1)) : null; } catch { shared = null; }
     if (shared) {
       Object.assign(state, { language: shared.language, description: shared.description, archetype_id: shared.frozen.archetype.id,
         source: ["ai", "canned", "manual"].includes(shared.source) ? shared.source : "shared", answers: shared.answers, frozen: shared.frozen,

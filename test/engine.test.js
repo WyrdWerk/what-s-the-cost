@@ -107,3 +107,23 @@ console.log("all engine tests passed");
   assert.equal(Engine.estimate(arch, cfg, ans).assumptions.run_model.id, "test-model");           // legacy shape
   console.log("Case F ok: tiers");
 }
+
+// Case G (red-team 2026-09-20): engine input contract.
+// Unordered input ranges must be normalised before pairing (conservative product = [lo·lo, hi·hi]).
+{
+  const flipped = { ...arch, setup_hours: [20, 10] };
+  const c = { ...cfg, setup_hourly_rate_inr: [1000, 2000] };
+  const ans = { tasks_per_day: 20, minutes_per_task: 20, current_handling: "staff" };
+  assert.deepEqual(Engine.estimate(flipped, c, ans).setup, [10000, 40000]);
+  // Malformed inputs throw instead of returning NaN/Infinity/negative rupees with a verdict attached.
+  assert.throws(() => Engine.estimate(arch, cfg, { ...ans, tasks_per_day: NaN }), RangeError);
+  assert.throws(() => Engine.estimate(arch, cfg, { ...ans, tasks_per_day: Number.MAX_VALUE }), RangeError);
+  assert.throws(() => Engine.estimate(arch, cfg, { ...ans, current_handling: "aliens" }), RangeError);
+  assert.throws(() => Engine.estimate(arch, { ...cfg, run_model: { id: "x", input_usd_per_million: -1e9, output_usd_per_million: 1 } }, ans), RangeError);
+  assert.throws(() => Engine.estimate(arch, { ...cfg, run_model: undefined, run_models: { evil: cfg.run_model }, default_tier: "balanced" }, ans), RangeError);
+  assert.throws(() => Engine.estimate({ ...arch, tokens_per_step: { input: [1, "2"], output: [1, 2] } }, cfg, ans), RangeError);
+  // $0 model is legal (free tier) and yields a zero run range, still ordered.
+  const free = Engine.estimate(arch, { ...cfg, run_model: { id: "free", input_usd_per_million: 0, output_usd_per_million: 0 } }, ans);
+  assert.deepEqual(free.run, [0, 0]);
+  console.log("Case G ok: input contract");
+}
